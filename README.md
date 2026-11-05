@@ -1,4 +1,166 @@
-# Bluey
+# Windie: Bluey for Windows
+
+Windie is a Windows version of **Bluey**, the blueberry focus friend made by Riley. It tracks your work on a Windows laptop. Your iPhone sits under the monitor and shows the character.
+
+- **Riley's video:** [Bluey on YouTube](https://www.youtube.com/watch?v=8QPd6WD9Zzg)
+- **Riley's repository:** [rbrown101010/bluey-by-riley](https://github.com/rbrown101010/bluey-by-riley)
+
+## Clone and independent work
+
+This repository is a clone of Riley's project. It is independent development. Riley did not write, review or endorse the Windows code. Riley's Mac and iPhone code is kept as it was, under the same [Unlicense](LICENSE). The original README follows below the line, unchanged except that the old `## Windows` section moved here.
+
+Windie adds the `Windows/` folder and one GitHub Actions workflow. Nothing in `Mac/`, `iOS/` or `Shared/` was changed.
+
+## What is new
+
+| Item | What it is |
+|---|---|
+| `Windows/` | A Python rewrite of the Mac app (about 3,900 lines), with 35 unit tests. |
+| Same protocol | The Windows app speaks the same encrypted phone protocol as the Mac app. The iPhone app needs no source change. |
+| Windows APIs | Screen capture, OCR, window reading, input and hotkeys use Windows replacements (see the table below). |
+| Capture exclusion | Bluey's own overlay is excluded from screenshots with `WDA_EXCLUDEFROMCAPTURE`. A test shows OCR does not read it. |
+| iPhone build without a Mac | `.github/workflows/ios-ipa.yml` builds an unsigned `Bluey.ipa` on a GitHub macOS runner. |
+
+## How Windie works without macOS
+
+The Mac app uses Apple frameworks. Windie uses these Windows parts instead:
+
+| Job | Mac app | Windie |
+|---|---|---|
+| Windows, tray, overlay | AppKit | Qt (PySide6) |
+| Screenshot | ScreenCaptureKit | `mss` |
+| OCR | Vision | `Windows.Media.Ocr` |
+| Read controls | Accessibility API | UI Automation |
+| Click and type | CGEvent | `SendInput` |
+| Idle time, lock | system calls | `GetLastInputInfo`, `OpenInputDesktop` |
+| Hotkeys | Carbon | `RegisterHotKey` |
+| Find the phone | Bonjour | `zeroconf` (mDNS) |
+| Encryption | CryptoKit | `cryptography` |
+| Secret storage | Keychain | files in `%APPDATA%\Googly` |
+
+The iPhone is the one part that still needs macOS: Xcode builds the iPhone app. Windie uses a cloud macOS runner for that step, so you do not own a Mac.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph PC["Windows laptop (Windie, Python)"]
+    direction TB
+    Qt["Qt thread<br/>tray, panels, overlay, hotkeys"]
+    Async["asyncio thread<br/>focus session, phone server,<br/>realtime voice, Codex jobs"]
+    Win["Windows APIs<br/>mss, Windows OCR, UI Automation,<br/>SendInput, GetLastInputInfo"]
+    Qt <-->|"queued Slot calls"| Async
+    Async --> Win
+  end
+  Phone["iPhone<br/>Bluey app (unchanged Swift)"]
+  OAI["OpenAI API<br/>Decisions, Responses, Realtime"]
+  Async <-->|"mDNS _googly._tcp<br/>AES-GCM over TCP, same Wi-Fi"| Phone
+  Async -->|"HTTPS, your API key"| OAI
+```
+
+## Pairing and message flow
+
+```mermaid
+sequenceDiagram
+  participant P as iPhone
+  participant W as Windie (PC)
+  W->>W: Make 256-bit secret, show QR text bluey-pair:...
+  P->>W: Scan QR (reads secret)
+  W-->>P: mDNS _googly._tcp, TXT bluey-id = first 12 bytes of SHA-256(secret)
+  P->>W: Open TCP connection
+  W->>P: challenge (random, base64)
+  P->>W: proof = HMAC-SHA256(secret, "bluey-pair-v1" + challenge)
+  Note over P,W: HKDF-SHA256 gives one key per direction
+  W->>P: sealed {"command":"paired"} (AES-GCM, sequence 0)
+  loop while paired
+    W->>P: sealed commands (focus state, nudge, pointer)
+    P->>W: sealed events (voice task, pause, end)
+  end
+```
+
+## Focus-check flow
+
+```mermaid
+flowchart TD
+  A["Every 30 s (10 real s in Developer Mode)"] --> B["Capture primary display<br/>(Bluey windows excluded)"]
+  B --> C["Windows OCR + front app name"]
+  C --> D["POST /v1/decisions<br/>gpt-6-luna: on_task / off_task / uncertain"]
+  D --> E{"Nudge policy:<br/>enough consecutive<br/>off-task evidence?"}
+  E -- no --> A
+  E -- yes --> F["Responses gpt-5.5<br/>writes one short sentence"]
+  F --> G["Bubble + pointer on the PC"]
+  F --> H["Chirp + text on the iPhone"]
+  G --> A
+  H --> A
+```
+
+## Build and install flow (no Mac needed)
+
+```mermaid
+flowchart LR
+  Git["Push to GitHub<br/>main branch"] --> GA["GitHub Actions<br/>macos-26 runner"]
+  GA --> X["xcodegen, then xcodebuild<br/>signing off"]
+  X --> IPA["Bluey.ipa artifact<br/>(unsigned)"]
+  IPA --> SL["Sideloadly on Windows<br/>signs with your Apple ID"]
+  SL --> iPhone["iPhone over USB"]
+```
+
+The runner must be `macos-26`. The iPhone code uses `allowBluetoothHFP`, which needs the iOS 26 SDK. A run on `macos-15` failed for that reason.
+
+## Install
+
+**Windows app** (Python 3.13):
+
+```powershell
+cd Windows
+py -3.13 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\pythonw bluey.py --pair
+```
+
+Bluey appears in the system tray. Windows Firewall asks about Python on the first run: allow it on private networks, or the phone cannot connect. Add your OpenAI key with **OpenAI Key…** in the tray menu. Keys, the pairing secret, settings and history are in `%APPDATA%\Googly`. Your user account, SYSTEM and administrators can read that folder; NTFS has no 0600 equivalent. The pairing QR code is a private credential.
+
+**iPhone app:**
+
+1. Open the **Actions** tab of this repository. Run **Build iPhone app (unsigned .ipa)**, or open the latest run.
+2. Download the artifact `Bluey-ipa` and unzip it.
+3. Install Sideloadly on Windows. Connect the iPhone by USB and trust the computer.
+4. Drag in `Bluey.ipa`, enter an Apple ID, and click Start.
+5. On the iPhone, trust your Apple ID in Settings > General > VPN & Device Management. Turn on Developer Mode if asked.
+6. Open Bluey on the iPhone and choose **Pair Mac**. Scan the QR code from the Windie tray menu.
+
+A free Apple ID signature expires after about 7 days, and the app then stops opening until you sign it again. This limit is from memory and was not checked here.
+
+## Differences from the Mac app
+
+- Shortcuts are **Ctrl+Alt** plus P, F, D, H, T or S. Wake is **Ctrl+Alt+W**, because Alt+Space opens the Windows system menu.
+- **Let Him Use the Computer** starts off. The Mac has an Accessibility prompt as a consent step, and Windows has none. Clicks and typing cannot reach windows that run as administrator.
+- Pointing, text reading and screenshots use the primary display only.
+- OCR uses the engine built into Windows, which needs an installed OCR language. Without one, checks use the screenshot alone.
+- The Mac approval queue and the `GOOGLY_DEMO_*` variables are not ported.
+- Codex voice jobs keep the Mac setting: `danger-full-access` with no approvals, whatever the computer-control switch says.
+
+## Test status
+
+**Tested on one Windows 11 laptop (1920x1080 at 125% scale):**
+
+- 35 unit tests pass: `cd Windows` then `.venv\Scripts\python test_bluey.py`.
+- The real app ran against a fake OpenAI server, with a scripted fake phone over real mDNS. It did off-task checks, a nudge, pointing and a chirp.
+- OCR, capture exclusion, `codex app-server` start-up and QR decoding passed.
+- The iPhone workflow built `Bluey.ipa` on a GitHub runner.
+- Idle CPU is 2.2% of one core. Mean paint time is 3.1 ms.
+
+**Not tested yet:**
+
+- Pairing with a real iPhone.
+- Real OpenAI calls (`bluey.py --focus-api-test` costs money).
+- Mouse and keyboard injection into a real window, hold-to-talk voice, transcription, app launch and a real Codex job.
+
+`bluey.py` takes the same `--focus-api-test`, `--focus-screen-test`, `--focus-link-test`, `--focus-developer-test` and `--focus-nudge-test` probes described under Tests below. They send screenshots to OpenAI: do not run them while private content is on screen.
+
+---
+
+# Bluey (original README by Riley)
 
 Bluey is a little blueberry focus friend. Keep your iPhone sideways under your Mac monitor: his eyes follow your mouse, and his matching blue cursor appears when he has something to point out. Same character, animation, British personality, speech bubbles and cartoon chirp. No spoken voice output and no glow.
 
@@ -90,27 +252,6 @@ Latest local verification: **22 deterministic tests passed**, both signed target
 
 Live API tests using **synthetic screenshots and OCR** classified an unrelated Twitter feed as off-task and directly relevant Twitter research as on-task. Automatic nudge delivery, capture/wording failures and cancellation were covered by injected fixture tests. These are separate from the physical notification test. Real off-task browsing with the latest classifier, audible chirp loudness and pointer targeting still need a manual device run; the synthetic examples are not an accuracy benchmark.
 
-## Windows
-
-`Windows/` is a Python rewrite of the Mac app. The iPhone app is intended to need no change: the Windows app speaks the same encrypted protocol and advertises the same `_googly._tcp` service. This has not been tested with a real iPhone yet. Building the iPhone app still needs Xcode on macOS.
-
-```powershell
-cd Windows
-py -3.13 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\pythonw bluey.py --pair
-```
-
-Bluey appears in the system tray. Windows Firewall asks about Python on the first run: allow it on private networks, or the phone can't connect. Keys, the pairing secret, settings and history are in `%APPDATA%\Googly`. Your user account, SYSTEM and administrators can read that folder; there is no 0600 equivalent on NTFS.
-
-Differences from the Mac app:
-
-- Shortcuts are **Ctrl+Alt** plus P, F, D, H, T or S. Wake is **Ctrl+Alt+W**, because Alt+Space opens the Windows system menu.
-- **Let Him Use the Computer** starts off. The Mac has an Accessibility prompt as a consent step, and Windows has none. Clicks and typing can't reach windows that run as administrator.
-- Pointing, text reading and screenshots use the primary display only.
-- OCR uses the engine built into Windows, which needs an installed OCR language. Without one, checks use the screenshot alone.
-
-Tests, with no real API calls: `.venv\Scripts\python test_bluey.py`. `bluey.py` takes the same `--focus-api-test`, `--focus-screen-test`, `--focus-link-test`, `--focus-developer-test` and `--focus-nudge-test` probes described under Tests.
 ## Existing capabilities
 
 The existing manual pointing, voice context, research cards, Codex controller and session history remain available. The focus path does not start the old continuous meeting-audio recorder by default. Realtime output remains text only, with bubbles and chirps. The long-lived key stays on the Mac.
@@ -121,7 +262,8 @@ The existing manual pointing, voice context, research cards, Codex controller an
 - `Mac/`: menu bar app, screenshot classifier, nudge generator, timer and existing tools.
 - `iOS/`: face, voice input, QR pairing, synchronized controls and focus timelines.
 - `Tests/`: deterministic logic, lifecycle and secure transport tests.
-- `Windows/`: Python rewrite of the Mac app, with its own tests.
+- `Windows/`: Windie, the Python rewrite of the Mac app, with its own tests.
+- `.github/workflows/`: builds the unsigned iPhone `.ipa` on a macOS runner.
 
 ## License
 
