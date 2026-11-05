@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Development Journey: Windie, Bluey for Windows</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0f172a; color: #cbd5e1; font: 16px/1.65 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { color: #e2e8f0; font-size: 2rem; margin: 0 0 8px; }
+  h2 { color: #fb923c; border-bottom: 1px solid #334155; padding-bottom: 6px; margin-top: 2.4rem; }
+  h3 { color: #2dd4bf; margin-top: 1.6rem; }
+  p, li { color: #cbd5e1; }
+  .meta { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px 18px; }
+  .meta p { margin: 4px 0; }
+  .muted { color: #94a3b8; }
+  code { background: #1e293b; color: #e2e8f0; padding: 1px 5px; border-radius: 4px; font: 0.9em ui-monospace, Consolas, monospace; }
+  pre { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+  pre code { padding: 0; background: none; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; background: #1e293b; }
+  th, td { border: 1px solid #334155; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { color: #e2e8f0; background: #0f172a; }
+  a { color: #2dd4bf; }
+  .rule { border: 1px solid #334155; border-radius: 8px; padding: 8px 14px; margin: 12px 0; color: #e2e8f0; background: #1e293b; }
+  .warn { border-color: #f87171; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Development Journey: Windie, Bluey for Windows</h1>
+<p class="muted">A warts-and-all account of one build, from a question about Riley's project to a Windows app, a GitHub repository and an iPhone build.</p>
+
+<div class="meta">
+  <p><strong>Dates:</strong> work started before 2026-11-02 (the resume file <code>HANDOFF.md</code> is dated 2026-11-02). The GitHub steps ran on 2026-11-05.</p>
+  <p><strong>Deliverable:</strong> <a href="https://github.com/az9713/windie-focus-me">github.com/az9713/windie-focus-me</a>, folder <code>Windows/</code>, workflow <code>.github/workflows/ios-ipa.yml</code>.</p>
+  <p><strong>Brief:</strong> "study the sources in cwd. i want to build the same apps but i have a Windows laptop and an iphone 17. can my bluey be built to track my work on my Windows laptop ?" Then: "rewrite the macOS for windows."</p>
+  <p><strong>Model:</strong> Opus 5.5 for the build. Sonnet 5.5 for the GitHub steps (the user ran <code>/model sonnet</code> between the two).</p>
+</div>
+
+<p class="rule warn"><strong>How this document was written.</strong> The session ran out of context once. Sections 1 to 4 and the early part of section 6 are reconstructed from the compaction summary and from <code>HANDOFF.md</code>, not from the live transcript. The GitHub steps (sections 5 to 8) come from the live transcript. Where a detail is not in either source, the text says so.</p>
+
+<h2>1. The brief: what was actually asked</h2>
+<p>The user has a Windows 11 laptop and an iPhone 17. They watched Riley's YouTube video (<code>8QPd6WD9Zzg</code>) about Bluey, a blueberry focus companion. Riley's project is a Mac menu bar app plus an iPhone app. The Mac watches the screen, asks OpenAI whether the work is on task, and sends nudges. The iPhone shows the character.</p>
+<p>The first question was whether Bluey could track work on a Windows laptop. The second message gave the real task: rewrite the macOS app for Windows. I read "the same apps" as: keep the iPhone app, replace the Mac app. That choice meant the Windows app had to talk to the existing, unchanged iPhone code. I resolved this without asking, because the repository holds both halves and only the Mac half cannot run on Windows.</p>
+<p>Invisible constraints that shaped the output:</p>
+<ul>
+  <li>The user's global rules: reply in ASD-STE100 Simplified Technical English, state claims with numbers, treat questions as read-only, never kill a process by name, and make the smallest change that works.</li>
+  <li>Focus mode: the user sees only the final message of each turn. Progress notes in the middle of a turn are not seen.</li>
+  <li>The Ponytail mode was active in the harness. It pushes toward the shortest working solution.</li>
+</ul>
+
+<h2>2. Starting point</h2>
+<p>The working folder was the project folder <code>bluey-by-riley-main</code>. It was not a git repository. It held Riley's Swift code: <code>Mac/</code> (menu bar app), <code>iOS/</code> (phone app), <code>Shared/</code> (pairing, palette, focus logic), <code>Tests/</code>, <code>project.yml</code> and a committed <code>GooglyEyes.xcodeproj</code>.</p>
+<p>One folder above the project sat a <code>.env</code> file with the user's OpenAI key. I never opened it. The app does not read it. This was a deliberate boundary: a secret file next to a project that would later go public.</p>
+
+<h2>3. Design decisions</h2>
+<table>
+  <tr><th>Decision</th><th>Chosen</th><th>Why the others lost</th></tr>
+  <tr><td>Language for the Windows app</td><td>Python with PySide6 (Qt)</td><td>The user does not write TypeScript, and Swift does not run on Windows. Python has a library for every Windows call needed. A native C# app would need a full second toolchain.</td></tr>
+  <tr><td>Threading</td><td>Qt owns windows on the main thread. An asyncio loop on a second thread owns all logic. A <code>Dispatcher</code> with a named queued <code>Slot</code> hops between them.</td><td>The Mac app uses Swift's <code>@MainActor</code> for this role. A single thread would block the overlay during network calls. A lambda connected to a signal did not guarantee the thread hop, so the named <code>Slot</code> replaced it.</td></tr>
+  <tr><td>Phone protocol</td><td>Byte-compatible with <code>iOS/Sources/MacLink.swift</code></td><td>Changing the iPhone app would force a fork of Riley's Swift code. Matching it keeps <code>Mac/</code>, <code>iOS/</code> and <code>Shared/</code> untouched.</td></tr>
+  <tr><td>Computer control</td><td>Off by default (<code>computerControl</code> is <code>False</code>)</td><td>The Mac asks for Accessibility permission, which acts as a consent step. Windows has no such prompt. The Mac default is on.</td></tr>
+  <tr><td>Wake hotkey</td><td>Ctrl+Alt+W</td><td>Ctrl+Alt+Space was already taken on this laptop. Alt+Space is the Windows system menu.</td></tr>
+  <tr><td>Building the iPhone app</td><td>GitHub Actions macOS runner, then Sideloadly</td><td>Xcode needs macOS and the user has no Mac. Expo Go does not fit, because the app is native Swift. TestFlight needs a paid Apple account ($99 per year, from memory).</td></tr>
+  <tr><td>Repository visibility</td><td>Public (the user's choice)</td><td>Public gives free macOS minutes (from memory, not confirmed). It also forced the personal-data scrub in section 6.</td></tr>
+</table>
+<p><strong>Deliberately not built:</strong> the Swift approval queue and the <code>GOOGLY_DEMO_*</code> variables. Nothing fills the queue in the Windows app. Multi-monitor support is also cut: pointing, text reading and screenshots use the primary display only.</p>
+
+<h2>4. The core problem: matching an encrypted protocol with no phone to test against</h2>
+<p>The Windows app must pair with an iPhone app that nobody could run during the build. Any one-byte difference in the handshake makes pairing fail with no useful error. The wire format, taken from the Swift source:</p>
+<ul>
+  <li>Bonjour service <code>_googly._tcp</code>. The TXT record <code>bluey-id</code> holds the first 12 bytes of SHA-256(secret) as 24 hex characters.</li>
+  <li>The server sends <code>{"challenge": b64}</code>. The client sends <code>{"proof": b64}</code>, where the proof is HMAC-SHA256(secret, "bluey-pair-v1" + challenge).</li>
+  <li>HKDF-SHA256 with the challenge as salt and the info strings <code>bluey-v1-mac-to-phone</code> and <code>bluey-v1-phone-to-mac</code> gives one key per direction.</li>
+  <li>Records use AES-GCM (nonce, ciphertext, tag), base64, one per line, with a strict sequence counter. The server's first sealed packet is <code>{"command":"paired"}</code>.</li>
+  <li>The QR text is <code>bluey-pair:</code> plus base64 of JSON <code>{version:1, service, secret}</code>.</li>
+</ul>
+<p>Swift's <code>Codable</code> added three traps. Python tests pin all three:</p>
+<ul>
+  <li>Dates are seconds since 2001-01-01. The Python constant is <code>_REFERENCE_DATE = 978307200.0</code>.</li>
+  <li>UUIDs must be uppercase.</li>
+  <li>Every non-optional key must be present, or the decoder throws.</li>
+</ul>
+<p>Without a phone, I built a scripted fake phone that speaks this protocol over real mDNS and ran the real Windows app against it, with a fake OpenAI server. That is the best evidence available, and it is not the same as a real iPhone. The README says so.</p>
+<p>Lesson: with no real peer to test against, I wrote the peer's side from its source and pinned each encoding trap with a test.</p>
+
+<h2>5. The GitHub and iPhone-build steps (live transcript)</h2>
+<h3>5.1 The repository question</h3>
+<p>The user proposed <code>github.com/az9713/windy-please-focus-me</code> and asked if pushing later was fine. I answered yes, with three conditions: create it empty, choose public or private, and push <code>bluey-by-riley-main</code> as the root so the parent <code>.env</code> stays out. The repository the user actually created is <code>windie-focus-me</code>, public. I used that name.</p>
+<h3>5.2 First commit</h3>
+<ol>
+  <li>I ran <code>git init -b main</code> and set <code>origin</code> to the new URL. I listed the files with <code>git add -n .</code> before any commit. The list had 80 files.</li>
+  <li>The list contained <code>HANDOFF.md</code>, which holds local paths and a VPN address. The user said: "do not push HANDOFF.md and my *.txt. scrub all personal info (email ok)". I added <code>HANDOFF.md</code> and <code>/*.txt</code> to <code>.gitignore</code>.</li>
+  <li>"My *.txt" was ambiguous. The only <code>.txt</code> files in the repo were two font licenses and <code>Windows/requirements.txt</code>. They are not the user's notes, and the licenses are required. I kept them and said so. The user did not object.</li>
+  <li>A search for the user's name, account names, email, VPN address, local paths, <code>AppData</code> and key patterns found one real hit: a test name in <code>Windows/test_bluey.py</code> that held the user's first name. I changed it to <code>"Test PC"</code>. All 35 tests still passed.</li>
+  <li>The first commit had 79 files. The user said "commit and push". Commit <code>6e4475e</code> went to <code>main</code>.</li>
+</ol>
+<h3>5.3 The first build failed on the SDK version</h3>
+<p>The push started the workflow. It failed on the <code>macos-15</code> runner:</p>
+<pre><code>iOS/Sources/LiveVoice.swift:487:97: error: type 'AVAudioSession.CategoryOptions.ArrayLiteralElement'
+(aka 'AVAudioSession.CategoryOptions') has no member 'allowBluetoothHFP'
+** BUILD FAILED **   (xcodebuild exit code 65)</code></pre>
+<p><code>allowBluetoothHFP</code> needs the iOS 26 SDK. The <code>macos-15</code> image has an older Xcode. I changed <code>runs-on</code> to <code>macos-26</code>, committed, and pushed. The second run succeeded and uploaded the artifact <code>Bluey-ipa</code> (1,067,893 bytes). Run: <code>42060418575</code>.</p>
+<p>Lesson: for a build that fails on a missing API, the first check is the runner's SDK version, before any source edit.</p>
+<p>That fix was a follow-up inside the push the user had approved, and the earlier plan said I would fix build failures. I flagged it in the same turn.</p>
+<h3>5.4 The README</h3>
+<p>The README was still Riley's. The user asked for a new section with credit to the video and repository, a note that this is a clone and independent work, the new features, how it runs without macOS, and Mermaid diagrams. The message ended with "AMIAQ", which in the user's glossary means: ask questions about decisions first, then work.</p>
+<p>I asked four questions with the question tool: the URL of Riley's repository, the position of the new section, which diagrams, and the tone. The user chose "I will paste it" for the URL but sent no URL. I did not guess. I asked again in plain text, and the user pasted <code>https://github.com/rbrown101010/bluey-by-riley</code>.</p>
+<p>The new top section has four Mermaid diagrams: architecture, pairing and message flow, focus-check flow, and build and install flow. The old <code>## Windows</code> section moved into the new text. Commit <code>645035a</code> pushed it.</p>
+
+<h2>6. What went wrong, and the fixes</h2>
+<p>Items 1 to 8 come from the compaction summary and are reconstructed. Items 9 to 14 come from the live transcript.</p>
+<ol>
+  <li><strong>Socket option.</strong> <code>TransportSocket</code> has no <code>ioctl</code>. Fix: <code>setsockopt</code> with <code>SO_KEEPALIVE</code>, <code>TCP_KEEPIDLE 2</code>, <code>TCP_KEEPINTVL 1</code>.</li>
+  <li><strong>Wrong coordinates at 125% scale.</strong> The code reported 1536x864 for a 1920x1080 panel, and the scale changed mid-run after importing <code>uiautomation</code>. Fix: set DPI awareness at <code>control.py</code> import and read DPI with <code>GetDpiForMonitor</code>. <em>Near-miss:</em> pointing looked slightly off at first. Without the DPI check the cause would have looked like an OCR error.</li>
+  <li><strong>Hotkey conflict.</strong> Ctrl+Alt+Space was taken on this laptop. Wake moved to Ctrl+Alt+W. Result: 7 of 7 hotkeys register.</li>
+  <li><strong>Idle CPU.</strong> Readings of 20.3% and 14.1% came from a busier test run. The tick now drops to 30 Hz when nothing is drawn. A clean idle measurement gave 2.2% of one core. <em>Near-miss:</em> the two high numbers were nearly accepted as the real figure.</li>
+  <li><strong>White text on white.</strong> The report card was unreadable in dark mode. Fix: explicit <code>color: #17151F</code> styles.</li>
+  <li><strong>Thread hop.</strong> A lambda connected to a signal did not guarantee a hop to the Qt thread. Fix: <code>Dispatcher</code> with a named <code>@Slot</code> and <code>QueuedConnection</code>.</li>
+  <li><strong>Hardening.</strong> Added a settings write lock, a focus ticker guard, an <code>OSError</code> guard in <code>_persist</code>, a <code>TypeError</code> catch in <code>_parse_args</code>, and a printed warning if capture exclusion is refused.</li>
+  <li><strong>Process handling.</strong> The venv <code>python.exe</code> is a launcher that starts a child process. The launcher PID is not the app PID, so stopping the launcher leaves the app running. Harnesses now exit by themselves. This also followed the rule: never kill a process by name.</li>
+  <li><strong>Input test never ran.</strong> The test waits for 20 idle seconds before it injects input. The laptop stayed active for 8 minutes. Output: <code>you stayed active for 8 minutes: injection test not run</code>. This stays open.</li>
+  <li><strong>QR "no usable data".</strong> The user scanned the QR code with the iPhone Camera app and saw "no usable data". This is expected: the QR text starts with <code>bluey-pair:</code>, which only the Bluey app reads, and Bluey was not installed on the phone yet.</li>
+  <li><strong>macOS runner SDK.</strong> The <code>allowBluetoothHFP</code> failure in section 5.3.</li>
+  <li><strong>Pages was already on.</strong> After the push, a <code>pages-build-deployment</code> run appeared. The Pages API showed source <code>main</code>, folder <code>/</code>, legacy build, public. I did not enable it and do not know what did. The whole branch is served at <code>https://az9713.github.io/windie-focus-me/</code>. I explained the options to the user and asked. No answer yet.</li>
+  <li><strong>Automated security reviews.</strong> Four notes arrived from a review plugin. Three were about <code>Windows/realtime.py</code>, <code>Mac/.../RealtimeHost.swift</code> and Codex permissions. The fourth flagged <code>macos-26</code> as an unknown runner label. I judged the label real (the run succeeded on a hosted runner) and said so. I did not change <code>Mac/</code>. The refused-shortcut check in <code>Windows/realtime.py</code> may miss Win-key aliases such as "windows" or "super". I have not verified that, and I asked before editing.</li>
+  <li><strong>Mermaid not rendered.</strong> I wrote four Mermaid diagrams and could not render them locally. They render on GitHub only. I told the user to check the repo page.</li>
+</ol>
+
+<h2>7. Verification</h2>
+<table>
+  <tr><th>Claim</th><th>How it was checked</th></tr>
+  <tr><td>35 unit tests pass</td><td><code>.venv\Scripts\python -m unittest test_bluey</code> printed "Ran 35 tests ... OK", also after the personal-data edit.</td></tr>
+  <tr><td>Phone flow works</td><td>The real app ran against a fake OpenAI server on 127.0.0.1 and a scripted fake phone over real mDNS. Off-task checks came at 42 and 82 focus seconds. A nudge followed the second. Pointing and a chirp happened.</td></tr>
+  <tr><td>Developer-mode paths</td><td><code>--focus-developer-test</code> (first check at 10.5 real seconds) and <code>--focus-nudge-test</code>, both against the fake server.</td></tr>
+  <tr><td>Overlay stays out of the capture</td><td>OCR read a test word on the real translucent overlay with exclusion off, and did not read it with exclusion on.</td></tr>
+  <tr><td>QR code is valid</td><td>OpenCV decoded it to a valid pairing record.</td></tr>
+  <tr><td>Codex starts</td><td><code>codex app-server</code> initialize worked. No job was started.</td></tr>
+  <tr><td>Performance</td><td>Mean paint 3.1 ms. Idle CPU 2.2% of one core.</td></tr>
+  <tr><td>iPhone app compiles</td><td>GitHub Actions run <code>42060418575</code> concluded <code>success</code>, and the artifact <code>Bluey-ipa</code> exists at 1,067,893 bytes.</td></tr>
+  <tr><td>Nothing private was pushed</td><td>The file list was read before the first commit. A search for personal strings and key patterns found only the test name, which was changed.</td></tr>
+</table>
+<p><strong>Not verified:</strong></p>
+<ul>
+  <li>Pairing with a real iPhone. The <code>.ipa</code> was built but not installed.</li>
+  <li>Real OpenAI calls. <code>--focus-api-test</code> costs money and the user has not allowed it. No money was spent on the API.</li>
+  <li><code>click</code>, <code>type_text</code>, <code>press_keys</code>, <code>scroll</code> and <code>drag</code> on a real window.</li>
+  <li>Hold-to-talk voice, <code>transcribe</code>, <code>open_app</code> launch, and a real Codex job.</li>
+  <li>The Mermaid diagrams on GitHub.</li>
+  <li>The 7-day limit of a free Apple ID signature, the 3-app limit, and free macOS minutes on public repos. All are from memory.</li>
+</ul>
+
+<h2>8. Human-in-the-loop moments</h2>
+<ul>
+  <li>The user pasted the OpenAI key through the app dialog, so the key stayed out of the chat and out of files I read.</li>
+  <li>The user created the GitHub repository and chose public.</li>
+  <li>The user told me not to push <code>HANDOFF.md</code> or <code>.txt</code> files, and to scrub personal data.</li>
+  <li>The user answered four design questions for the README, and pasted Riley's repository URL after one missing answer.</li>
+  <li>The user switched the model with <code>/model sonnet</code> between the build and the GitHub steps.</li>
+  <li>A hook asked me to show a coach note at the top of one reply: the user's three-word "commit and push" prompts re-read the whole context, and the note suggested a standing rule. I showed it verbatim.</li>
+</ul>
+
+<h2>9. Agents and tooling</h2>
+<p>The work was done inline. I did not spawn subagents. The advisor tool was used during the build, before the compaction. I do not have its advice in the current context, so I cannot say what it changed. Tools: Bash, PowerShell, Read, Write, Edit, Glob, Grep, WebSearch, the question tool, <code>git</code> and the <code>gh</code> CLI (logged in as <code>az9713</code>).</p>
+
+<h2>10. Where things stand</h2>
+<table>
+  <tr><th>Item</th><th>State</th></tr>
+  <tr><td>Windows app</td><td>Done. 35 tests pass. About 3,872 app lines and 490 test lines.</td></tr>
+  <tr><td>Repository</td><td>Public. Commits <code>6e4475e</code>, the runner fix, and <code>645035a</code> (README) are on <code>main</code>.</td></tr>
+  <tr><td>iPhone build</td><td>Built. The artifact <code>Bluey-ipa</code> is ready to download.</td></tr>
+  <tr><td>Real iPhone</td><td>Not installed, not paired.</td></tr>
+</table>
+<h3>Open items for the next session</h3>
+<ol>
+  <li><strong>Install and pair.</strong> Download the artifact, sign it with Sideloadly, install it, and scan the QR code from the tray menu. If pairing fails, compare <code>Windows/link.py</code> with <code>iOS/Sources/MacLink.swift</code> and <code>Shared/SecurePairing.swift</code>.</li>
+  <li><strong>Pages.</strong> Choose: turn it off (recommended, since the repository has no HTML docs of its own), serve only <code>/docs</code>, or leave it. This page lives in <code>docs/</code>, so it is only reachable if Pages stays on.</li>
+  <li><strong>Workflow permissions.</strong> Add <code>permissions: contents: read</code> to <code>ios-ipa.yml</code>. Not done: the user has not answered.</li>
+  <li><strong>Shortcut guard.</strong> Check whether <code>Windows/realtime.py</code> lets "windows+l" through, then fix it by building the check from <code>control.parse_combo</code>. Not done.</li>
+  <li><strong>Input test.</strong> Run <code>Windows\smoke.py</code> while the laptop is idle (the file is in the session scratchpad, which is lost after the session).</li>
+  <li><strong>Real API test.</strong> Run <code>--focus-api-test</code> only with the user's permission.</li>
+</ol>
+<h3>Known shortcuts</h3>
+<ul>
+  <li><code>realtime.py</code> sets engine attributes from the asyncio thread and relies on the GIL.</li>
+  <li>mDNS advertises every non-loopback IPv4 address, including a VPN address. If the phone finds the PC but cannot connect, check this first.</li>
+  <li>OCR needs an installed Windows language.</li>
+  <li>Codex voice jobs keep <code>danger-full-access</code> and no approvals, whatever the computer-control switch says. Riley's Mac code does the same, and the user has not reviewed it for Windows.</li>
+</ul>
+<h3>Scratch work that is gone after the session</h3>
+<p>These scripts lived in the session scratchpad and are not in the repository: <code>smoke.py</code> (drives the real App object), <code>e2e_app.py</code> and <code>e2e_nudge.py</code> (fake OpenAI and fake phone), <code>exclusion.py</code>, <code>checks2.py</code>, <code>idle_cpu.py</code>. To rebuild them: patch <code>focus.API_BASE</code> to a local HTTP server, set <code>BLUEY_HOME</code> to a temporary folder holding a fake <code>keys.json</code>, and call <code>bluey.run_app()</code>.</p>
+
+<h2>11. Knowledge captured</h2>
+<ul>
+  <li><code>HANDOFF.md</code> (local only, ignored by git): state, next task, decisions and the scratch list.</li>
+  <li><code>README.md</code>: the new Windie section with credits, diagrams, differences and test status.</li>
+  <li>This document.</li>
+  <li>No memory files were written in the part of the session this document covers.</li>
+</ul>
+
+</main>
+</body>
+</html>

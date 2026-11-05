@@ -131,6 +131,49 @@ Bluey appears in the system tray. Windows Firewall asks about Python on the firs
 
 A free Apple ID signature expires after about 7 days, and the app then stops opening until you sign it again. This limit is from memory and was not checked here.
 
+## Test the Windows and iPhone pair
+
+The pairing QR code is a private credential. Do not share a picture of it.
+
+**Part 1: get the iPhone app.**
+
+1. Run `gh run download <run-id> -R az9713/windie-focus-me`, or download `Bluey-ipa` from the run page in the **Actions** tab. Unzip it to get `Bluey.ipa`.
+2. Install Sideloadly and iTunes (from apple.com, not the Microsoft Store) on Windows.
+3. Connect the iPhone by USB. Tap Trust.
+4. Drag `Bluey.ipa` into Sideloadly. Enter an Apple ID. Click Start.
+5. On the iPhone, trust your Apple ID in Settings > General > VPN & Device Management. Turn on Developer Mode if asked.
+
+**Part 2: start Windie.**
+
+1. Put the iPhone and the PC on the same Wi-Fi.
+2. From `Windows/`, run `.venv\Scripts\pythonw bluey.py --pair`.
+3. Allow Python through Windows Firewall on private networks.
+4. Add your OpenAI key with **OpenAI Key…** in the tray menu.
+
+**Part 3: pair.**
+
+1. In the tray menu, choose **Pair iPhone (QR)…**.
+2. On the iPhone, open Bluey. Allow Camera and Local Network access.
+3. Choose **Pair Mac**. Scan the QR code on the PC screen.
+4. Expected result: the phone shows a connected state.
+
+**Part 4: test in this order.**
+
+1. **Connection.** This is the first real-phone test of the protocol.
+2. **Developer Mode.** Turn it on in the Focus screen on the phone. Checks run every 10 real seconds, and the clock runs 4 times faster.
+3. **Test a nudge.** Tap the button on the phone. It needs no screenshot and no OpenAI call. Expected result: a bubble on the PC and a chirp on the phone.
+4. **Voice.** Hold Bluey's face and say a task. This is untested and uses the Realtime API.
+5. **A real focus session.** Start a task, open an unrelated page, and wait. This sends screenshots of your main display to OpenAI and costs money. Close private windows first.
+
+**If pairing fails:**
+
+1. Check that both devices use the same Wi-Fi.
+2. Check the firewall rule for Python.
+3. Turn off any VPN and retry. The PC advertises every IPv4 address it has, including VPN addresses.
+4. Open an issue with what the phone shows. The code to compare is `Windows/link.py`, `iOS/Sources/MacLink.swift` and `Shared/SecurePairing.swift`.
+
+To test without a phone, run `.venv\Scripts\python test_bluey.py` from `Windows/`. It runs 35 tests with no real API calls.
+
 ## Differences from the Mac app
 
 - Shortcuts are **Ctrl+Alt** plus P, F, D, H, T or S. Wake is **Ctrl+Alt+W**, because Alt+Space opens the Windows system menu.
