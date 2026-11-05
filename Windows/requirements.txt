@@ -1,0 +1,15 @@
+PySide6-Essentials==6.12.0
+mss==10.2.0
+pillow==13.0.0
+cryptography==50.0.2
+zeroconf==0.153.0
+segno==1.6.6
+psutil==7.2.2
+uiautomation==2.0.29
+winrt-runtime==4.1.0
+winrt-Windows.Foundation==4!10.0.28000.2957
+winrt-Windows.Foundation.Collections==4!10.0.28000.2957
+winrt-Windows.Globalization==4!10.0.28000.2957
+winrt-Windows.Graphics.Imaging==4!10.0.28000.2957
+winrt-Windows.Media.Ocr==4!10.0.28000.2957
+winrt-Windows.Storage.Streams==4!10.0.28000.2957

@@ -1,0 +1,17 @@
+.build/
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+# API keys never go in git
+Secrets.xcconfig
+*.env
+.env*
+
+# Windows port
+Windows/.venv/
+__pycache__/
+
+HANDOFF.md
+/*.txt
