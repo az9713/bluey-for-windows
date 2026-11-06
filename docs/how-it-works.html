@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>How Windie works: every component, explained</title>
+<style>
+  :root { color-scheme: dark; --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#cbd5e1; --head:#e2e8f0; --muted:#94a3b8; --orange:#fb923c; --teal:#2dd4bf; --red:#f87171; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.65 system-ui,"Segoe UI",sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 36px 20px 90px; }
+  h1 { color:var(--head); font-size:2.1rem; margin:0 0 6px; }
+  h2 { color:var(--orange); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:3rem; }
+  h3 { color:var(--teal); margin-top:1.8rem; }
+  p, li { color:var(--text); }
+  a { color:var(--teal); }
+  code { background:var(--card); color:var(--head); padding:1px 5px; border-radius:4px; font:.9em ui-monospace,Consolas,monospace; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; }
+  pre code { padding:0; background:none; }
+  .muted { color:var(--muted); }
+  nav { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 18px; margin:20px 0; }
+  nav a { margin-right:14px; white-space:nowrap; display:inline-block; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; background:var(--card); font-size:.95rem; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--bg); color:var(--head); }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:14px 0; }
+  .box.warn { border-color:var(--red); }
+  .box.key { border-color:var(--orange); }
+  .fig { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin:16px 0; }
+  .fig svg { width:100%; height:auto; display:block; }
+  .fig .cap { min-height:3.4em; margin:10px 4px 4px; color:var(--head); }
+  .fig .ctl { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 4px; }
+  button { background:var(--bg); color:var(--head); border:1px solid var(--line); border-radius:6px; padding:5px 12px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--teal); }
+  .node rect { fill:#0f172a; stroke:#475569; stroke-width:1.5; rx:8; }
+  .node text { fill:#cbd5e1; font:13px system-ui,sans-serif; text-anchor:middle; }
+  .node.seen rect { stroke:#64748b; }
+  .node.on rect { stroke:var(--orange); stroke-width:3; fill:#1c2b45; }
+  .node.on text { fill:#fff; }
+  .edge { stroke:#475569; stroke-width:1.8; fill:none; }
+  .edge.on { stroke:var(--teal); stroke-width:3; stroke-dasharray:8 5; animation:flow 0.9s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset:-26; } }
+  .lane { stroke:#475569; stroke-width:2; stroke-dasharray:4 4; }
+  .lanehead text { fill:var(--head); font:600 14px system-ui; text-anchor:middle; }
+  .msg line { stroke:#475569; stroke-width:1.8; }
+  .msg text { fill:#94a3b8; font:12px ui-monospace,Consolas,monospace; text-anchor:middle; }
+  .msg.on line { stroke:var(--teal); stroke-width:3; }
+  .msg.on text { fill:#fff; }
+  .msg.hide { opacity:0; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
+  details { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 14px; margin:12px 0; }
+  summary { cursor:pointer; color:var(--head); }
+  .tag { display:inline-block; font-size:.8rem; border:1px solid var(--line); border-radius:999px; padding:0 8px; margin-left:6px; color:var(--muted); }
+  .ok { color:var(--teal); } .bad { color:var(--red); }
+  /* eyes demo */
+  #demo { display:grid; grid-template-columns:1.5fr 1fr; gap:14px; align-items:start; }
+  @media (max-width:760px){ #demo { grid-template-columns:1fr; } }
+  #screen { position:relative; height:260px; background:#12233f; border:2px solid #475569; border-radius:6px; cursor:crosshair; overflow:hidden; }
+  #screen .hint { position:absolute; left:10px; top:8px; color:#b6c2d4; font-size:.85rem; pointer-events:none; }
+  #dot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:var(--orange); pointer-events:none; left:50%; top:40%; }
+  #screenwrap { position:relative; margin-bottom:34px; }
+  #vphone { position:absolute; width:56px; height:22px; margin-left:-28px; top:calc(100% + 8px); border:2px dashed #94a3b8; border-radius:6px; color:#b6c2d4; font-size:.7rem; text-align:center; line-height:18px; pointer-events:none; }
+  #phonebox { background:#000; border:3px solid #64748b; border-radius:22px; height:200px; position:relative; overflow:hidden; }
+  .eye { position:absolute; top:45px; width:62px; height:62px; background:#fff; border-radius:50%; overflow:hidden; }
+  .pupil { position:absolute; width:26px; height:26px; background:#111; border-radius:50%; left:18px; top:18px; }
+  .lid { position:absolute; left:0; right:0; top:0; height:0%; background:#2563eb; transition:height .4s; }
+  #blob { position:absolute; left:8%; right:8%; bottom:-40px; height:120px; background:#2563eb; border-radius:50% 50% 0 0; }
+  #readout { font:13px ui-monospace,Consolas,monospace; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-top:8px; white-space:pre-wrap; color:var(--head); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>How Windie works: every component, explained</h1>
+<p class="muted">For a reader who knows software and networks, but not Apple signing, iTunes drivers, Sideloadly or CI. Written 2026-11-05, after the first real run on a Windows 11 laptop and an iPhone.</p>
+
+<nav>
+  <a href="#short">1. The short answer</a>
+  <a href="#cast">2. The cast</a>
+  <a href="#map">3. End-to-end map</a>
+  <a href="#why">4. Why a Windows rewrite</a>
+  <a href="#build">5. GitHub Actions</a>
+  <a href="#sign">6. Signing and Sideloadly</a>
+  <a href="#usb">7. iTunes and the USB driver</a>
+  <a href="#pair">8. Finding and pairing</a>
+  <a href="#mouse">9. How the mouse is tracked</a>
+  <a href="#focus">10. The focus check</a>
+  <a href="#steps">11. Every handoff</a>
+  <a href="#broke">12. What broke</a>
+  <a href="#state">13. What is verified</a>
+  <a href="#gloss">14. Glossary</a>
+</nav>
+
+<h2 id="short">1. The short answer</h2>
+<div class="box key">
+<p><strong>The phone never sees your mouse.</strong> The Windows app (Windie) reads the cursor position on the laptop up to 60 times per second. It turns the position into two numbers, <code>gazeX</code> and <code>gazeY</code>, each between -1 and 1. It sends those numbers to the iPhone as a small encrypted message over your Wi-Fi. The iPhone app (Bluey) moves the pupils to match. Section 9 has an interactive version you can move your own mouse over.</p>
+</div>
+<p>Everything else on this page answers a different question: how did a Windows laptop get to talk to an iPhone app that Apple only lets you build on a Mac? There are two separate problems:</p>
+<ol>
+  <li><strong>Problem A: get the iPhone app onto the iPhone.</strong> You have no Mac. A cloud Mac builds the app (GitHub Actions). A Windows tool signs it with your Apple ID and installs it by USB (Sideloadly, helped by iTunes' USB driver).</li>
+  <li><strong>Problem B: make the two devices work together.</strong> The Windows app finds the phone on the Wi-Fi, proves it knows a shared secret from a QR code, and then sends encrypted messages.</li>
+</ol>
+
+<h2 id="cast">2. The cast: every component in one line each</h2>
+<table>
+<tr><th>Component</th><th>What it is</th><th>Role in this project</th></tr>
+<tr><td><strong>Bluey</strong> (Riley's project)</td><td>A "blueberry focus friend": a Mac menu bar app plus an iPhone app, in Swift.</td><td>The original. We kept its iPhone app unchanged.</td></tr>
+<tr><td><strong>Windie</strong> (this repo)</td><td>A Python rewrite of the Mac app, in <code>Windows/</code>.</td><td>Runs on the laptop. Watches the screen and mouse. Talks to the phone.</td></tr>
+<tr><td><strong>OpenAI APIs</strong> (4 calls, 3 used in the focus feature)</td><td>Web services at <code>https://api.openai.com/v1/</code>, called with your API key.</td><td><strong>Decisions API</strong> (<code>POST /v1/decisions</code>, model <code>gpt-6-luna</code>): judges each screenshot as <code>on_task</code>, <code>off_task</code> or <code>uncertain</code>. <strong>Responses API</strong> (<code>POST /v1/responses</code>, model <code>gpt-5.5</code>): writes the one-sentence nudge, and web research cards. <strong>Realtime API</strong> (<code>POST /v1/realtime/client_secrets</code>, model <code>gpt-realtime-2.1</code>): gives the phone a short-lived token for voice. <strong>Audio transcription</strong> (<code>gpt-4o-transcribe-diarize</code>, fallback <code>gpt-transcribe</code>): meeting notes. The focus check uses only the first two.</td></tr>
+<tr><td><strong>GitHub</strong></td><td>Hosts the code in a git repository.</td><td>Stores the source. Starts the cloud build. Serves these pages.</td></tr>
+<tr><td><strong>GitHub Actions</strong></td><td>A "run this script on a rented machine when I push" service (CI).</td><td>Builds the iPhone app on a rented Mac.</td></tr>
+<tr><td><strong>macOS runner</strong></td><td>The rented Mac virtual machine GitHub starts for a workflow.</td><td>Has Xcode. Windows cannot build iPhone apps; this machine can.</td></tr>
+<tr><td><strong>Xcode / <code>xcodebuild</code></strong></td><td>Apple's compiler toolchain. It runs on macOS only.</td><td>Compiles the Swift code into an iPhone app.</td></tr>
+<tr><td><strong>xcodegen</strong></td><td>A tool that writes an Xcode project file from a short <code>project.yml</code>.</td><td>Makes <code>GooglyEyes.xcodeproj</code> on the runner.</td></tr>
+<tr><td><strong><code>.ipa</code></strong></td><td>An iPhone app package. It is a zip file with a <code>Payload/Bluey.app/</code> folder inside.</td><td>The output of the build. Ours is unsigned.</td></tr>
+<tr><td><strong>Apple ID + code signing</strong></td><td>A cryptographic signature that iOS checks before it runs an app.</td><td>Without a valid signature, the iPhone refuses to open the app.</td></tr>
+<tr><td><strong>Sideloadly</strong></td><td>A Windows/Mac tool that signs an <code>.ipa</code> with your own Apple ID and installs it by USB.</td><td>Replaces the App Store and Xcode for a single user.</td></tr>
+<tr><td><strong>iTunes / Apple Mobile Device Support</strong></td><td>Apple's Windows software. One part of it is the USB driver and service that lets a PC talk to an iPhone.</td><td>Sideloadly cannot see the phone without it.</td></tr>
+<tr><td><strong>Developer Mode</strong></td><td>An iOS switch (iOS 16 and later) that allows apps from outside the App Store.</td><td>Must be on, or the sideloaded app will not open.</td></tr>
+<tr><td><strong>mDNS / Bonjour</strong></td><td>A way for devices on one network to announce and find services by name, with no server.</td><td>The phone finds the PC. Service name <code>_googly._tcp</code>.</td></tr>
+<tr><td><strong>QR pairing + AES-GCM</strong></td><td>A shared secret passed by camera, then encrypted messages.</td><td>Only your phone can talk to your PC.</td></tr>
+<tr><td><strong>Tailscale / VPN</strong></td><td>Another network adapter on your PC.</td><td>Not required. It adds a second address that Windie advertises.</td></tr>
+</table>
+
+<h2 id="map">3. The end-to-end map</h2>
+<p>This figure shows the whole journey, from "push code" to "eyes move". Use <strong>Next</strong> to step through. Each highlighted arrow is one handoff, and sections 5 to 9 explain each one.</p>
+<div class="fig" id="fig-map"></div>
+
+<h2 id="why">4. Why Windie exists at all</h2>
+<p>Riley's Mac app calls Apple frameworks for everything that touches the computer: screenshots, text recognition, reading buttons, clicking, hotkeys, finding the phone, encryption and storing secrets. None of them exist on Windows. Windie replaces each one with a Windows equivalent, and keeps the phone protocol identical, byte for byte, so the iPhone app does not change.</p>
+<table>
+<tr><th>Job</th><th>Mac app</th><th>Windie</th></tr>
+<tr><td>Windows, tray icon, overlay</td><td>AppKit</td><td>Qt (PySide6)</td></tr>
+<tr><td>Screenshot</td><td>ScreenCaptureKit</td><td><code>mss</code></td></tr>
+<tr><td>Read text on screen (OCR)</td><td>Vision</td><td><code>Windows.Media.Ocr</code></td></tr>
+<tr><td>Read buttons and fields</td><td>Accessibility API</td><td>UI Automation</td></tr>
+<tr><td>Click and type</td><td>CGEvent</td><td><code>SendInput</code></td></tr>
+<tr><td>Idle time, screen lock</td><td>system calls</td><td><code>GetLastInputInfo</code>, <code>OpenInputDesktop</code></td></tr>
+<tr><td>Hotkeys</td><td>Carbon</td><td><code>RegisterHotKey</code></td></tr>
+<tr><td>Find the phone</td><td>Bonjour</td><td><code>zeroconf</code> (mDNS)</td></tr>
+<tr><td>Encryption</td><td>CryptoKit</td><td><code>cryptography</code></td></tr>
+<tr><td>Secret storage</td><td>Keychain</td><td>files in <code>%APPDATA%\Googly</code></td></tr>
+</table>
+<p><strong>How the Windows app is organised.</strong> Qt must own all windows on the main thread. All the logic (phone server, focus timer, OpenAI calls) runs in an <code>asyncio</code> loop on a second thread. A small <code>Dispatcher</code> hands work from one thread to the other. The Swift app gets this split from <code>@MainActor</code>.</p>
+<p><strong>Alternatives we rejected for the iPhone side.</strong> Expo Go runs JavaScript apps, and Bluey is native Swift, so it does not fit. TestFlight and the App Store need a paid Apple Developer account ($99 per year, from memory). Building on a borrowed Mac works, but you have no Mac. A rented Mac in the cloud was the cheapest path left.</p>
+
+<h2 id="build">5. Problem A, step 1: GitHub Actions builds the app on a rented Mac</h2>
+<h3>What CI is</h3>
+<p>"CI" means continuous integration: a service runs a script on a fresh machine each time you push code. GitHub Actions is GitHub's version. The script is a YAML file in <code>.github/workflows/</code>. Each run starts a clean virtual machine (the "runner"), runs the steps, and throws the machine away. GitHub rents out Windows, Linux and macOS runners. The macOS runner is the only reason a user with no Mac can build an iPhone app.</p>
+<h3>What our workflow does</h3>
+<p>The file is <code>.github/workflows/ios-ipa.yml</code>. It starts when you click "Run workflow" (<code>workflow_dispatch</code>) or push to <code>main</code> with changes under <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow itself.</p>
+<div class="fig" id="fig-build"></div>
+<details>
+<summary>The workflow file (click to open)</summary>
+<pre><code>runs-on: macos-26
+steps:
+  - uses: actions/checkout@v4
+  - run: brew install xcodegen
+  - run: xcodegen generate
+  - run: |
+      xcodebuild -project GooglyEyes.xcodeproj -scheme GooglyEyes \
+        -configuration Release -sdk iphoneos -derivedDataPath build \
+        CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+        CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
+  - run: |
+      mkdir Payload
+      cp -R build/Build/Products/Release-iphoneos/Bluey.app Payload/
+      zip -r Bluey.ipa Payload
+  - uses: actions/upload-artifact@v4
+    with: { name: Bluey-ipa, path: Bluey.ipa }</code></pre>
+</details>
+<h3>Why "unsigned"?</h3>
+<p>The build has no access to your Apple ID or any certificate, so it turns signing off (<code>CODE_SIGNING_ALLOWED=NO</code>). Riley's <code>project.yml</code> names his Apple team (<code>DEVELOPMENT_TEAM</code>), and an empty value in the command overrides it. The result is a valid app that iOS will refuse to open. Signing happens later, on your PC (section 6).</p>
+<div class="box warn">
+<p><strong>The failure we hit here.</strong> The first run used <code>macos-15</code> and stopped with <code>iOS/Sources/LiveVoice.swift:487:97: error: ... has no member 'allowBluetoothHFP'</code> and <code>xcodebuild</code> exit code 65. That Bluetooth option exists only in the iOS 26 SDK, and the <code>macos-15</code> image has an older Xcode. Changing <code>runs-on</code> to <code>macos-26</code> fixed it. Run <code>42060418575</code> succeeded and produced a 1,067,893-byte artifact named <code>Bluey-ipa</code>.</p>
+</div>
+<p>Cost: GitHub macOS minutes are free for public repositories and limited for private ones (from memory, not checked). This repository is public.</p>
+
+<h2 id="sign">6. Problem A, step 2: signing, Apple ID and Sideloadly</h2>
+<h3>Why iOS needs a signature</h3>
+<p>iOS runs only code that carries a signature chained to Apple. The signature must match a "provisioning profile", a document Apple issues that says "this developer may run this app on these specific devices". Normally the App Store, TestFlight or Xcode with a developer account gives you that. An unsigned <code>.ipa</code> has none of it, so the phone will not open the app.</p>
+<h3>What Sideloadly does</h3>
+<p>Sideloadly is a Windows/Mac program that does what Xcode does for a hobbyist. It logs into Apple with your Apple ID, asks Apple's developer service for a free development certificate, an App ID and a provisioning profile tied to your iPhone's ID, signs the <code>.ipa</code> with them, and installs the result over USB.</p>
+<div class="fig" id="fig-sign"></div>
+<table>
+<tr><th>What you saw</th><th>What it meant</th></tr>
+<tr><td><code>iPhone (27.2) ... @USB</code> in the device list</td><td>Sideloadly could talk to the phone through the USB driver (section 7).</td></tr>
+<tr><td><code>[9 App IDs Remaining, updates 6d]</code></td><td>Apple accepted your Apple ID and made an App ID for Bluey. A free account can create only a few App IDs per week (the limit is from memory; Sideloadly showed 9 remaining). "Updates 6d" is the signature's remaining life.</td></tr>
+<tr><td><strong>Done.</strong> at 100%</td><td>The signed app was copied to the phone.</td></tr>
+<tr><td>Phone restarted for Developer Mode</td><td>iOS shows the Developer Mode switch only after a sideloaded app exists. Turning it on restarts the phone.</td></tr>
+</table>
+<div class="box warn">
+<p><strong>Limits of a free Apple ID.</strong> The signature lasts about 7 days. After that, Bluey stops opening, and you run Sideloadly again to renew it. A free account also limits how many apps you can sideload (3, from memory, not checked). A paid developer account ($99 per year, from memory) gives a one-year signature and TestFlight.</p>
+<p>Sideloadly sends your Apple ID to Apple. The Sideloadly installer is unsigned (<code>NotSigned</code>), and it came from <code>sideloadly.io</code>. Use only the Sideloadly window for your password.</p>
+</div>
+
+<h2 id="usb">7. Problem A, step 3: iTunes and the USB driver</h2>
+<p>Why is a music program involved? An iPhone does not appear as a normal USB drive. A PC talks to it through Apple's own protocol, run by a small background service. Apple ships that service on Windows inside iTunes. Sideloadly asks the service three things: which phones are connected, can I pair with this one, and please install this app. Without the service, Sideloadly shows <code>&lt;no devices detected&gt;</code>.</p>
+<div class="fig" id="fig-usb"></div>
+<p>The part we need is called <strong>Apple Mobile Device Support</strong>. It contains the driver and the service named <strong>Apple Mobile Device Service</strong>. (As far as I understand it, this service is Apple's version of the open-source <code>usbmuxd</code>. That is a general fact, not something I checked in the code.)</p>
+<div class="box warn">
+<p><strong>Three failures we hit here.</strong></p>
+<ol>
+<li><code>apple.com/itunes/</code> now redirects to the Microsoft Store. Apple still serves the classic installer at <code>https://www.apple.com/itunes/download/win64</code> (<code>iTunes64Setup.exe</code>, 202,558,432 bytes, signed by Apple Inc.).</li>
+<li>The silent install (<code>/quiet</code>) exited with 0 but left no "Apple Mobile Device Service" and no <code>Mobile Device Support</code> folder. The installer holds a second package inside. <code>iTunes64Setup.exe /extract &lt;folder&gt;</code> unpacked <code>AppleMobileDeviceSupport64.msi</code> (32.8 MB). Installing it with <code>msiexec /i ... /qn</code> fixed this. The service then sat in <code>StartPending</code> for more than 20 seconds before it worked.</li>
+<li>Windows listed the iPhone only over Bluetooth, not USB. A replug, an unlocked screen and a tap on "Trust" fixed it: Windows then showed <code>Apple Mobile Device USB Composite Device</code>.</li>
+</ol>
+</div>
+<h3>Trust and Developer Mode, in one place</h3>
+<ul>
+<li><strong>"Trust This Computer?"</strong> on the phone lets the PC talk to it over USB.</li>
+<li><strong>Settings, General, VPN &amp; Device Management, your Apple ID, Trust</strong> lets the phone run apps signed by that Apple ID.</li>
+<li><strong>Developer Mode</strong> allows apps that did not come from the App Store. It needs a restart.</li>
+<li><strong>Local Network</strong> (an iOS permission) lets Bluey find the PC. <strong>Camera</strong> lets it scan the QR code.</li>
+</ul>
+
+<h2 id="pair">8. Problem B: finding the PC and pairing</h2>
+<h3>Finding</h3>
+<p>Both devices are on the same Wi-Fi. Windie announces a service called <code>_googly._tcp</code> using mDNS (the same idea as Apple's Bonjour). The announcement carries a TCP port (57251 in our run) and a short label, <code>bluey-id</code>, equal to the first 12 bytes of SHA-256 of the shared secret, written as 24 hex characters. The phone looks for that service name on the network and compares the label to the one it holds.</p>
+<h3>Pairing</h3>
+<p>The first time, the PC shows a QR code. It contains the text <code>bluey-pair:</code> plus base64 of a small JSON record with a version, the service name and a 256-bit secret. The phone scans it and saves the secret in its Keychain. From then on, every connection must prove it knows the secret, with no password typed and nothing sent in the clear.</p>
+<p><strong>Why the camera closes at once.</strong> The scan screen calls <code>dismiss()</code> the moment a valid code is saved (<code>iOS/Sources/QRPairingView.swift</code>). A fast close means success.</p>
+<div class="fig" id="fig-pair"></div>
+<details>
+<summary>Protocol details (click to open)</summary>
+<ul>
+<li>Proof: HMAC-SHA256 of the secret over the text <code>bluey-pair-v1</code> followed by the challenge.</li>
+<li>Keys: HKDF-SHA256 with the challenge as salt. The info strings <code>bluey-v1-mac-to-phone</code> and <code>bluey-v1-phone-to-mac</code> give a different key for each direction.</li>
+<li>Messages: AES-GCM (nonce, ciphertext, tag), base64, one per line, each wrapped as <code>{"sequence": n, "packet": ...}</code>. The sequence number must increase by one, so a recorded message cannot be replayed.</li>
+<li>The Windows code is in <code>Windows/link.py</code>. It must match <code>iOS/Sources/MacLink.swift</code> and <code>Shared/SecurePairing.swift</code> exactly. Three Swift traps are pinned by tests: dates are seconds since 2001-01-01, UUIDs are uppercase, and every non-optional key must be present.</li>
+</ul>
+</details>
+<p><strong>Why a Windows PC can pretend to be a Mac.</strong> The phone does not care what the other end is. It checks for the service name, the secret, and the message format. Windie speaks all three, so the phone treats it as the Mac app.</p>
+
+<h2 id="mouse">9. The mystery: how Bluey tracked a mouse on a different system</h2>
+<div class="box key">
+<p>The phone is a screen that draws eyes. All the thinking happens on the PC. Every tick (about every 16 ms while something is drawn, about 33 ms when idle), Windie does this:</p>
+<ol>
+<li>Reads the cursor position with Qt's <code>QCursor.pos()</code>, which asks Windows for it.</li>
+<li>Treats the phone as sitting at a <em>virtual point</em> just below the bottom edge of the screen: horizontally at 20%, 50% or 80% of the screen width (the menu item "Phone Sits Under", default Center), vertically at 118% of the screen height.</li>
+<li>Computes the direction from that point to the cursor, as two numbers:
+<pre><code>gazeX = clamp( (cursorX - phoneX) / (screenWidth * 0.5), -1, 1 )
+gazeY = -max(0.15, min(1, (phoneY - cursorY) / (screenHeight * 1.1)))</code></pre></li>
+<li>Sends <code>{"face": {"gazeX": ..., "gazeY": ..., "mood": ..., "talk": ...}}</code> to the phone, encrypted, over TCP.</li>
+</ol>
+<p>The iPhone app moves the pupils toward those numbers with a spring (stiffness 260, damping 0.82 in <code>FaceView.swift</code>), which makes the motion smooth and adds a small jitter.</p>
+</div>
+<h3>The handoff chain, one hop at a time</h3>
+<p>This is the full path of one eye movement, from your hand to the pupils. There are 12 hops. They cross three boundaries: the Qt thread to the asyncio thread inside Windie, the PC to the phone over Wi-Fi, and the phone's network code to its drawing code. Use <strong>Next</strong> to step through. The caption names who runs each hop.</p>
+<div class="fig" id="fig-mouse"></div>
+<table>
+<tr><th>#</th><th>Hop</th><th>Where it runs</th><th>Code</th></tr>
+<tr><td>1</td><td>You move the mouse.</td><td>Hardware and Windows</td><td>-</td></tr>
+<tr><td>2</td><td>Windows updates its cursor position.</td><td>Windows</td><td>Operating system</td></tr>
+<tr><td>3</td><td>A timer fires: every 16 ms while Bluey is drawn, every 33 ms when it is tucked away.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>_tick</code></td></tr>
+<tr><td>4</td><td>Windie reads the cursor with <code>QCursor.pos()</code>.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>_tick</code></td></tr>
+<tr><td>5</td><td>The engine turns the position into <code>gazeX</code>, <code>gazeY</code>, mood and talk level.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>face()</code></td></tr>
+<tr><td>6</td><td>The result is handed to the asyncio thread.</td><td>PC, between threads</td><td><code>bluey.py</code> <code>call_soon_threadsafe</code></td></tr>
+<tr><td>7</td><td>Windie drops updates too small to see.</td><td>PC, asyncio thread</td><td><code>link.py</code> <code>send_face</code></td></tr>
+<tr><td>8</td><td>The packet is numbered, encrypted and written as one line.</td><td>PC, asyncio thread</td><td><code>link.py</code> <code>SecureChannel.seal</code></td></tr>
+<tr><td>9</td><td>The line travels over TCP on your Wi-Fi.</td><td>Network</td><td>-</td></tr>
+<tr><td>10</td><td>The phone decrypts it, checks the sequence number and decodes the face.</td><td>iPhone, network code</td><td><code>MacLink.swift</code> (<code>onPacket</code>, <code>onFace</code>)</td></tr>
+<tr><td>11</td><td>The face animator stores the new target gaze.</td><td>iPhone</td><td><code>GooglyApp.swift</code> <code>animator.receive</code></td></tr>
+<tr><td>12</td><td>On every display frame, a spring moves the pupils toward the target, and the screen redraws.</td><td>iPhone, drawing code</td><td><code>FaceView.swift</code> (spring: stiffness 260, damping 0.82)</td></tr>
+</table>
+<p>Two details are worth knowing. First, the phone works only from the latest target it received. If a packet is late, the pupils keep moving toward the older target, because of the spring. If none arrives for 2.5 seconds, the eyes wander on their own. Second, a packet carries no mouse position, no screen size and no timestamp that the phone uses for the eyes: only the numbers that hop 5 produced.</p>
+<p><strong>Try it.</strong> Move your mouse over the dark "PC screen". The eyes in the "phone" follow. The numbers shown use the formulas above. The dashed box under the screen is the virtual phone point. Stop moving for 5 seconds and the eyes get sleepy. After 15 seconds they close, like the real app.</p>
+<div class="fig">
+<div id="demo">
+  <div>
+    <div id="screenwrap"><div id="screen"><div class="hint">PC screen: move your mouse here</div><div id="dot"></div></div><div id="vphone">phone</div></div>
+    <div>
+      Phone sits under:
+      <label><input type="radio" name="pp" value="0.2"> Left</label>
+      <label><input type="radio" name="pp" value="0.5" checked> Center</label>
+      <label><input type="radio" name="pp" value="0.8"> Right</label>
+    </div>
+  </div>
+  <div>
+    <div id="phonebox">
+      <div class="eye" style="left:22%"><div class="pupil" id="pl"></div><div class="lid" id="ll"></div></div>
+      <div class="eye" style="right:22%"><div class="pupil" id="pr"></div><div class="lid" id="lr"></div></div>
+      <div id="blob" style="z-index:0"></div>
+    </div>
+    <div id="readout">gazeX: 0.00
+gazeY: -0.15
+mood: listening
+packets in the last second: 0</div>
+  </div>
+</div>
+</div>
+<h3>Why this works across two systems</h3>
+<table>
+<tr><th>Question</th><th>Answer</th></tr>
+<tr><td>Where is the mouse read?</td><td>On the PC only. The phone has no access to the PC's mouse.</td></tr>
+<tr><td>What crosses the network?</td><td>Two small numbers, a mood word and a talk level. About one short line of JSON per update, encrypted.</td></tr>
+<tr><td>How often?</td><td>Up to 60 times per second. Windie skips an update when both gaze values moved less than 0.004, and mood and talk did not change. It still resends once per second, so the phone knows the PC is alive (<code>send_face</code> in <code>Windows/link.py</code>).</td></tr>
+<tr><td>How does the phone know where the PC screen is?</td><td>It does not. It only receives a direction. The PC decides what "left" and "up" mean, using the virtual phone point.</td></tr>
+<tr><td>Why do the eyes always look a little up?</td><td>The virtual phone point is below the screen, so every cursor position is above it. The code limits <code>gazeY</code> to at least 0.15 upward.</td></tr>
+<tr><td>Why did Bluey fall asleep in the video?</td><td>In follow-mouse mode, if the mouse does not move for 5 seconds the mood becomes <code>sleepy</code>, and after 15 seconds <code>resting</code> (<code>overlay.py</code>).</td></tr>
+<tr><td>How fast is it?</td><td>I did not measure the delay between the cursor and the eyes. On a local network a small message should arrive in milliseconds. That is an expectation, not a measurement.</td></tr>
+</table>
+<p>The "Test a nudge" button works the other way: the phone sends a command to the PC, and the PC shows a text bubble. That exercised the second direction of the same encrypted channel.</p>
+
+<h2 id="focus">10. The focus check: screenshots and OpenAI</h2>
+<p>Mouse tracking needs no internet. The focus feature does. You tell Bluey a task. While the timer runs, Windie checks every 30 seconds (every 10 real seconds in Developer Mode):</p>
+<div class="fig" id="fig-focus"></div>
+<ul>
+<li><strong>Capture:</strong> one screenshot of the main display, using a Windows setting that hides Bluey's own windows from the capture.</li>
+<li><strong>Read:</strong> Windows OCR turns the screen text into words, and Windie records the front app name.</li>
+<li><strong>Decide:</strong> a reduced JPEG, the OCR text, the task and recent results go to OpenAI's Decisions API (<code>gpt-6-luna</code>), which answers <code>on_task</code>, <code>off_task</code> or <code>uncertain</code>.</li>
+<li><strong>Policy:</strong> a nudge needs several consecutive off-task answers over 120 to 240 seconds (40 to 80 focus seconds in Developer Mode).</li>
+<li><strong>Nudge:</strong> a second request (<code>gpt-5.5</code>) writes one gentle sentence. The PC shows it in a bubble. The phone chirps.</li>
+</ul>
+<div class="box warn"><p>This path sends screenshots to OpenAI and costs money. It is the one part not yet tested with real OpenAI calls. The "Test a nudge" button skips the screenshot and OpenAI, which is why it was safe to test first.</p></div>
+
+<h2 id="steps">11. Every handoff, in order</h2>
+<p>Each row is one place where work passes from one component to the next. "Seen" means we observed it work in this project.</p>
+<table>
+<tr><th>#</th><th>From &rarr; to</th><th>What moves</th><th>Seen</th></tr>
+<tr><td>1</td><td>You &rarr; GitHub</td><td>Source code, by <code>git push</code> to <code>main</code>.</td><td class="ok">yes</td></tr>
+<tr><td>2</td><td>GitHub &rarr; macOS runner</td><td>Starts a clean rented Mac (<code>macos-26</code>) and checks out the code.</td><td class="ok">yes (after one failure on <code>macos-15</code>)</td></tr>
+<tr><td>3</td><td><code>project.yml</code> &rarr; xcodegen &rarr; Xcode project</td><td>A short config becomes <code>GooglyEyes.xcodeproj</code>.</td><td class="ok">yes</td></tr>
+<tr><td>4</td><td>Swift source &rarr; <code>xcodebuild</code> &rarr; <code>Bluey.app</code></td><td>Compile, unsigned.</td><td class="ok">yes</td></tr>
+<tr><td>5</td><td><code>Bluey.app</code> &rarr; <code>Bluey.ipa</code> &rarr; artifact</td><td>Zip into <code>Payload/</code>, upload as <code>Bluey-ipa</code> (1,067,893 bytes).</td><td class="ok">yes</td></tr>
+<tr><td>6</td><td>GitHub &rarr; your PC</td><td><code>gh run download 42060418575 -R az9713/windie-focus-me</code>.</td><td class="ok">yes</td></tr>
+<tr><td>7</td><td>iTunes installer &rarr; your PC</td><td>The USB driver and service (Apple Mobile Device Support).</td><td class="ok">yes, after two problems</td></tr>
+<tr><td>8</td><td>iPhone &rarr; PC (USB)</td><td>"Trust This Computer"; the phone shows up as a USB device.</td><td class="ok">yes</td></tr>
+<tr><td>9</td><td>Sideloadly &rarr; Apple</td><td>Apple ID login, certificate, App ID, provisioning profile.</td><td class="ok">yes (<code>9 App IDs Remaining</code>)</td></tr>
+<tr><td>10</td><td>Sideloadly &rarr; iPhone (USB)</td><td>Signed <code>Bluey.app</code> is installed.</td><td class="ok">yes (<strong>Done.</strong>)</td></tr>
+<tr><td>11</td><td>You &rarr; iPhone settings</td><td>Trust the developer, turn on Developer Mode, restart.</td><td class="ok">yes</td></tr>
+<tr><td>12</td><td>Windie &rarr; Wi-Fi</td><td>mDNS announcement <code>_googly._tcp</code>, TCP port 57251.</td><td class="ok">yes (listening port seen)</td></tr>
+<tr><td>13</td><td>PC screen &rarr; iPhone camera</td><td>QR code with the secret.</td><td class="ok">yes</td></tr>
+<tr><td>14</td><td>iPhone &harr; PC (Wi-Fi)</td><td>Challenge, proof, encrypted channel, <code>paired</code>.</td><td class="ok">yes (TCP connection from the phone seen)</td></tr>
+<tr><td>15</td><td>PC mouse &rarr; Windie &rarr; iPhone (12 hops, see section 9)</td><td><code>QCursor.pos()</code>, <code>gazeX</code>/<code>gazeY</code>, encrypted packet, eyes move.</td><td class="ok">yes (video, 2026-11-05)</td></tr>
+<tr><td>16</td><td>iPhone &rarr; Windie</td><td>"Test a nudge" command; PC shows a bubble.</td><td class="ok">yes (bubble); phone chirp not confirmed</td></tr>
+<tr><td>17</td><td>Windie &harr; OpenAI Decisions API, then Responses API</td><td>Screenshot and OCR text out, <code>on_task</code>/<code>off_task</code>/<code>uncertain</code> back; then a nudge sentence.</td><td class="bad">not tested with the real API</td></tr>
+<tr><td>18</td><td>iPhone &rarr; Windie (voice)</td><td>Hold-to-talk through the Realtime API.</td><td class="bad">not working in the video ("Voice could not connect")</td></tr>
+</table>
+
+<h2 id="broke">12. What broke, and what each failure teaches</h2>
+<table>
+<tr><th>Where</th><th>Failure</th><th>Cause and fix</th></tr>
+<tr><td>CI</td><td><code>no member 'allowBluetoothHFP'</code>, exit 65</td><td>Runner SDK too old. Use <code>macos-26</code>.</td></tr>
+<tr><td>iTunes</td><td>Apple page redirects to Microsoft Store</td><td>Use Apple's direct link <code>.../itunes/download/win64</code>.</td></tr>
+<tr><td>iTunes</td><td>No "Apple Mobile Device Service" after a silent install</td><td>Extract with <code>/extract</code> and install <code>AppleMobileDeviceSupport64.msi</code>.</td></tr>
+<tr><td>Sideloadly</td><td><code>&lt;no devices detected&gt;</code></td><td>Phone visible over Bluetooth only. Replug, unlock, tap Trust.</td></tr>
+<tr><td>Sideloadly</td><td>Apple ID field held <code>az9713</code></td><td>An Apple ID is an email address.</td></tr>
+<tr><td>Phone</td><td>"I do not see Bluey"</td><td>It was installed. A blank icon (the app has no icon file), search by name.</td></tr>
+<tr><td>Pairing</td><td>"The camera closes as soon as it sees the QR"</td><td>That is the success path.</td></tr>
+<tr><td>Windie</td><td>Wrong pointer position at 125% display scale</td><td>Set DPI awareness at import and read DPI per monitor.</td></tr>
+<tr><td>Windie</td><td>Hotkey Ctrl+Alt+Space was taken</td><td>Wake moved to Ctrl+Alt+W.</td></tr>
+<tr><td>Windie</td><td>Idle CPU readings of 20.3% and 14.1%</td><td>They came from a busier run. A clean measurement gave 2.2% of one core.</td></tr>
+</table>
+
+<h2 id="state">13. What is verified and what is not</h2>
+<div class="grid2">
+<div class="box">
+<p class="ok"><strong>Verified</strong></p>
+<ul>
+<li>35 unit tests pass.</li>
+<li>The cloud build makes an <code>.ipa</code>.</li>
+<li>Sideloadly installs it on a real iPhone.</li>
+<li>The phone pairs by QR with Windie.</li>
+<li>The eyes follow the mouse (video: <a href="demo.html">demo page</a>).</li>
+<li>"Test a nudge" shows a bubble on the PC.</li>
+<li>Windie's overlay does not appear in its own screenshots.</li>
+</ul>
+</div>
+<div class="box">
+<p class="bad"><strong>Not verified</strong></p>
+<ul>
+<li>Real OpenAI focus checks and nudges.</li>
+<li>The chirp on the phone.</li>
+<li>Hold-to-talk voice (the phone showed "Voice could not connect").</li>
+<li>Clicking and typing into real windows.</li>
+<li>A real Codex job.</li>
+<li>The delay between the cursor and the eyes.</li>
+<li>The 7-day, 3-app and free-minutes limits (from memory).</li>
+</ul>
+</div>
+</div>
+
+<h2 id="gloss">14. Glossary</h2>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>App ID</td><td>Apple's registration record for one app. Sideloadly creates it for you.</td></tr>
+<tr><td>Artifact</td><td>A file a GitHub Actions run saves for download.</td></tr>
+<tr><td>CI</td><td>Continuous integration: a script that runs on a fresh machine when you push code.</td></tr>
+<tr><td>Provisioning profile</td><td>An Apple document that links an app, a developer and a list of devices.</td></tr>
+<tr><td>Runner</td><td>The machine that executes a workflow.</td></tr>
+<tr><td>Sideloading</td><td>Installing an iPhone app from outside the App Store.</td></tr>
+<tr><td>UDID</td><td>The unique ID of one iPhone. The signature is tied to it.</td></tr>
+<tr><td>mDNS / Bonjour</td><td>Name lookup on a local network with no server.</td></tr>
+<tr><td>HMAC</td><td>A keyed hash that proves you know a secret without sending it.</td></tr>
+<tr><td>HKDF</td><td>A way to turn one secret into several encryption keys.</td></tr>
+<tr><td>AES-GCM</td><td>Encryption that also detects tampering.</td></tr>
+<tr><td>Spring (animation)</td><td>Smooth motion toward a target, as if pulled by a spring.</td></tr>
+</table>
+
+<p class="muted">Related pages: <a href="demo.html">the demo video</a>, <a href="development-journey.html">the development journey</a> (how it was built, with the failures), and the <a href="https://github.com/az9713/windie-focus-me">repository README</a>.</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function defs(svg) {
+    var d = el("defs", {}, svg);
+    [["arr", "#475569"], ["arrOn", "#2dd4bf"]].forEach(function (a) {
+      var m = el("marker", { id: a[0] + svg.dataset.u, viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, d);
+      el("path", { d: "M0,0 L10,5 L0,10 z", fill: a[1] }, m);
+    });
+  }
+  var uid = 0;
+  function anchor(n, tx, ty) {
+    var cx = n.x + n.w / 2, cy = n.y + n.h / 2, dx = tx - cx, dy = ty - cy;
+    if (dx === 0 && dy === 0) return [cx, cy];
+    var sx = (n.w / 2) / Math.abs(dx || 1e-9), sy = (n.h / 2) / Math.abs(dy || 1e-9), s = Math.min(sx, sy);
+    return [cx + dx * s, cy + dy * s];
+  }
+  function controls(host, total, onGo, onReset) {
+    var ctl = document.createElement("div"); ctl.className = "ctl";
+    var cap = document.createElement("div"); cap.className = "cap";
+    var prev = document.createElement("button"); prev.textContent = "Back";
+    var next = document.createElement("button"); next.textContent = "Next";
+    var play = document.createElement("button"); play.textContent = "Play";
+    var reset = document.createElement("button"); reset.textContent = "Reset";
+    var pos = document.createElement("span"); pos.className = "muted";
+    [prev, next, play, reset, pos].forEach(function (b) { ctl.appendChild(b); });
+    host.appendChild(ctl); host.appendChild(cap);
+    var i = -1, timer = null;
+    function go(n) { i = Math.max(-1, Math.min(total - 1, n)); onGo(i, cap); pos.textContent = (i + 1) + " / " + total; }
+    function stop() { if (timer) { clearInterval(timer); timer = null; play.textContent = "Play"; } }
+    prev.onclick = function () { stop(); go(i - 1); };
+    next.onclick = function () { stop(); go(i + 1); };
+    reset.onclick = function () { stop(); go(-1); cap.textContent = "Press Next or Play."; };
+    play.onclick = function () {
+      if (timer) { stop(); return; }
+      if (i >= total - 1) go(-1);
+      play.textContent = "Pause";
+      timer = setInterval(function () { if (i >= total - 1) { stop(); return; } go(i + 1); }, 2600);
+    };
+    go(-1); cap.textContent = "Press Next or Play.";
+  }
+
+  // Generic node-and-arrow stepper.
+  function stepper(id, cfg) {
+    var host = document.getElementById(id); if (!host) return;
+    var svg = el("svg", { viewBox: "0 0 " + cfg.w + " " + cfg.h, role: "img", "aria-label": cfg.label }, host);
+    svg.dataset.u = ++uid; defs(svg);
+    var N = {}, nodeEls = {}, edgeEls = [];
+    cfg.nodes.forEach(function (n) { N[n.id] = n; });
+    cfg.edges.forEach(function (e) {
+      var a = N[e[0]], b = N[e[1]];
+      var pa = anchor(a, b.x + b.w / 2, b.y + b.h / 2), pb = anchor(b, a.x + a.w / 2, a.y + a.h / 2);
+      var p = el("path", { d: "M" + pa[0] + "," + pa[1] + " L" + pb[0] + "," + pb[1], "class": "edge" }, svg);
+      p.setAttribute("marker-end", "url(#arr" + svg.dataset.u + ")");
+      edgeEls.push({ k: e[0] + ">" + e[1], el: p });
+    });
+    cfg.nodes.forEach(function (n) {
+      var g = el("g", { "class": "node" }, svg);
+      el("rect", { x: n.x, y: n.y, width: n.w, height: n.h }, g);
+      n.t.forEach(function (line, k) {
+        var t = el("text", { x: n.x + n.w / 2, y: n.y + n.h / 2 + (k - (n.t.length - 1) / 2) * 16 + 4 }, g);
+        t.textContent = line;
+      });
+      nodeEls[n.id] = g;
+    });
+    var seen = {};
+    controls(host, cfg.steps.length, function (i, cap) {
+      if (i < 0) seen = {};
+      for (var k in nodeEls) nodeEls[k].setAttribute("class", "node");
+      edgeEls.forEach(function (e) { e.el.setAttribute("class", "edge"); e.el.setAttribute("marker-end", "url(#arr" + svg.dataset.u + ")"); });
+      for (var s = 0; s <= i; s++) cfg.steps[s].on.forEach(function (n) { if (nodeEls[n]) nodeEls[n].setAttribute("class", "node seen"); });
+      if (i >= 0) {
+        var st = cfg.steps[i];
+        st.on.forEach(function (n) { if (nodeEls[n]) nodeEls[n].setAttribute("class", "node on"); });
+        (st.edges || []).forEach(function (pair) {
+          edgeEls.forEach(function (e) {
+            if (e.k === pair[0] + ">" + pair[1] || e.k === pair[1] + ">" + pair[0]) {
+              e.el.setAttribute("class", "edge on"); e.el.setAttribute("marker-end", "url(#arrOn" + svg.dataset.u + ")");
+            }
+          });
+        });
+        cap.textContent = "Step " + (i + 1) + ". " + st.text;
+      }
+    });
+  }
+
+  // Sequence diagram stepper.
+  function sequence(id, cfg) {
+    var host = document.getElementById(id); if (!host) return;
+    var H = 70 + cfg.msgs.length * 44 + 20;
+    var svg = el("svg", { viewBox: "0 0 900 " + H, role: "img", "aria-label": cfg.label }, host);
+    svg.dataset.u = ++uid; defs(svg);
+    var xa = 170, xb = 730;
+    [[xa, cfg.a], [xb, cfg.b]].forEach(function (l) {
+      el("line", { x1: l[0], y1: 54, x2: l[0], y2: H - 10, "class": "lane" }, svg);
+      var g = el("g", { "class": "lanehead" }, svg);
+      el("rect", { x: l[0] - 110, y: 8, width: 220, height: 38, rx: 8, fill: "#0f172a", stroke: "#475569" }, g);
+      var t = el("text", { x: l[0], y: 32 }, g); t.textContent = l[1];
+    });
+    var items = cfg.msgs.map(function (m, k) {
+      var y = 84 + k * 44, from = m.dir === "r" ? xa : xb, to = m.dir === "r" ? xb : xa;
+      var g = el("g", { "class": "msg hide" }, svg);
+      var ln = el("line", { x1: from + (m.dir === "r" ? 6 : -6), y1: y, x2: to + (m.dir === "r" ? -6 : 6), y2: y }, g);
+      ln.setAttribute("marker-end", "url(#arr" + svg.dataset.u + ")");
+      var t = el("text", { x: (xa + xb) / 2, y: y - 8 }, g); t.textContent = m.label;
+      return { g: g, ln: ln };
+    });
+    controls(host, cfg.msgs.length, function (i, cap) {
+      items.forEach(function (it, k) {
+        it.g.setAttribute("class", "msg" + (k > i ? " hide" : (k === i ? " on" : "")));
+        it.ln.setAttribute("marker-end", "url(#arr" + (k === i ? "On" : "") + svg.dataset.u + ")");
+      });
+      if (i >= 0) cap.textContent = "Step " + (i + 1) + ". " + cfg.msgs[i].text;
+    });
+  }
+
+  // ---------- Figures ----------
+  stepper("fig-map", {
+    w: 900, h: 420, label: "End-to-end map from git push to eyes moving",
+    nodes: [
+      { id: "repo", x: 20, y: 30, w: 170, h: 60, t: ["GitHub repo", "(your code)"] },
+      { id: "act", x: 270, y: 30, w: 200, h: 60, t: ["GitHub Actions", "rented Mac builds"] },
+      { id: "ipa", x: 560, y: 30, w: 150, h: 60, t: ["Bluey.ipa", "(unsigned)"] },
+      { id: "side", x: 540, y: 170, w: 190, h: 60, t: ["Sideloadly", "(on your PC)"] },
+      { id: "drv", x: 740, y: 170, w: 140, h: 60, t: ["Apple USB", "driver (iTunes)"] },
+      { id: "phone", x: 740, y: 320, w: 140, h: 70, t: ["iPhone", "Bluey app"] },
+      { id: "win", x: 270, y: 320, w: 200, h: 70, t: ["Windie", "(on your PC)"] },
+      { id: "ai", x: 20, y: 320, w: 170, h: 70, t: ["OpenAI Decisions +", "Responses APIs"] }
+    ],
+    edges: [["repo", "act"], ["act", "ipa"], ["ipa", "side"], ["side", "drv"], ["drv", "phone"], ["win", "phone"], ["win", "ai"]],
+    steps: [
+      { on: ["repo"], text: "You push the code to GitHub." },
+      { on: ["repo", "act"], edges: [["repo", "act"]], text: "GitHub starts a rented Mac (macOS runner) and runs the workflow file." },
+      { on: ["act", "ipa"], edges: [["act", "ipa"]], text: "The Mac compiles the Swift code and packs an unsigned Bluey.ipa. You download it." },
+      { on: ["ipa", "side"], edges: [["ipa", "side"]], text: "Sideloadly takes the .ipa, logs into Apple with your Apple ID, and signs the app for your phone." },
+      { on: ["side", "drv", "phone"], edges: [["side", "drv"], ["drv", "phone"]], text: "Sideloadly installs the signed app over USB, through Apple's driver and service that iTunes provides." },
+      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Windie (on the PC) and Bluey (on the phone) find each other over Wi-Fi and pair with a QR code." },
+      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Windie reads the mouse and sends the eye direction. The phone moves the eyes." },
+      { on: ["win", "ai"], edges: [["win", "ai"]], text: "Optional focus check: Windie sends a screenshot and OCR text to the Decisions API (POST /v1/decisions) and gets on_task, off_task or uncertain back. If a nudge is due, it calls the Responses API for one sentence. Not yet tested with the real API." }
+    ]
+  });
+
+  stepper("fig-mouse", {
+    w: 900, h: 470, label: "Mouse movement to eye movement, 12 hops",
+    nodes: [
+      { id: "m1", x: 20, y: 20, w: 190, h: 70, t: ["1. You move", "the mouse"] },
+      { id: "m2", x: 250, y: 20, w: 190, h: 70, t: ["2. Windows keeps", "the cursor position"] },
+      { id: "m3", x: 480, y: 20, w: 190, h: 70, t: ["3. Qt timer fires", "16 ms / 33 ms idle"] },
+      { id: "m4", x: 710, y: 20, w: 170, h: 70, t: ["4. QCursor.pos()", "read the position"] },
+      { id: "m5", x: 710, y: 190, w: 170, h: 70, t: ["5. engine.face()", "gazeX, gazeY, mood"] },
+      { id: "m6", x: 480, y: 190, w: 190, h: 70, t: ["6. Thread hop", "Qt to asyncio"] },
+      { id: "m7", x: 250, y: 190, w: 190, h: 70, t: ["7. send_face()", "skip tiny changes"] },
+      { id: "m8", x: 20, y: 190, w: 190, h: 70, t: ["8. Seal packet", "number + AES-GCM"] },
+      { id: "m9", x: 20, y: 370, w: 190, h: 70, t: ["9. TCP over Wi-Fi", "one line"] },
+      { id: "m10", x: 250, y: 370, w: 190, h: 70, t: ["10. iPhone decrypts", "checks sequence"] },
+      { id: "m11", x: 480, y: 370, w: 190, h: 70, t: ["11. Animator stores", "target gaze"] },
+      { id: "m12", x: 710, y: 370, w: 170, h: 70, t: ["12. Spring + draw", "pupils move"] }
+    ],
+    edges: [["m1", "m2"], ["m2", "m3"], ["m3", "m4"], ["m4", "m5"], ["m5", "m6"], ["m6", "m7"], ["m7", "m8"], ["m8", "m9"], ["m9", "m10"], ["m10", "m11"], ["m11", "m12"]],
+    steps: [
+      { on: ["m1"], text: "Hop 1 (you). You move the mouse. Nothing in Windie or Bluey is involved yet." },
+      { on: ["m2"], edges: [["m1", "m2"]], text: "Hop 2 (Windows). Windows updates the system cursor position. Windie does not hook the mouse. It asks for the position when it needs it." },
+      { on: ["m3"], edges: [["m2", "m3"]], text: "Hop 3 (PC, Qt thread). A Qt timer calls _tick in overlay.py every 16 ms while Bluey is drawn, and every 33 ms when nothing is drawn. This is a polling loop, about 60 or 30 reads per second." },
+      { on: ["m4"], edges: [["m3", "m4"]], text: "Hop 4 (PC, Qt thread). _tick reads QCursor.pos() and subtracts the overlay window's top-left corner, so the position is relative to the overlay." },
+      { on: ["m5"], edges: [["m4", "m5"]], text: "Hop 5 (PC, Qt thread). engine.face() computes gazeX and gazeY from the cursor and the virtual phone point under the screen. It also picks a mood: listening, sleepy after 5 s without mouse movement, resting after 15 s. Result: {gazeX, gazeY, mood, talk}." },
+      { on: ["m6"], edges: [["m5", "m6"]], text: "Hop 6 (PC, between threads). The Qt thread must not do network work. A callback hands the face dict to the asyncio thread with loop.call_soon_threadsafe." },
+      { on: ["m7"], edges: [["m6", "m7"]], text: "Hop 7 (PC, asyncio thread). send_face() skips the update when mood and talk are unchanged and both gaze values moved less than 0.004, unless one second has passed. This keeps a still mouse from flooding the link." },
+      { on: ["m8"], edges: [["m7", "m8"]], text: "Hop 8 (PC, asyncio thread). SecureChannel.seal wraps the packet as {sequence: n, packet: {face: ...}}, encrypts it with AES-GCM, encodes it as base64 and ends it with a newline. broadcast() sends it to every paired phone." },
+      { on: ["m9"], edges: [["m8", "m9"]], text: "Hop 9 (network). The line goes over the TCP connection to the phone: through your Wi-Fi router, on the local network. Nothing leaves your home network. I did not measure how long this takes." },
+      { on: ["m10"], edges: [["m9", "m10"]], text: "Hop 10 (iPhone, network code). MacLink reads the line, decrypts it, checks that the sequence number is the next expected one, and decodes the packet. The face is passed to onFace." },
+      { on: ["m11"], edges: [["m10", "m11"]], text: "Hop 11 (iPhone). The face animator (animator.receive in FaceView.swift) stores the whole face as the new target and records when it arrived. If no packet arrives for 2.5 seconds, the phone decides the PC is not driving and the eyes wander on their own. That is why Windie resends once per second." },
+      { on: ["m12"], edges: [["m11", "m12"]], text: "Hop 12 (iPhone, drawing). On every display frame (TimelineView), a spring (stiffness 260, damping 0.82) moves the pupils toward the target, and the screen redraws. This is what you see." }
+    ]
+  });
+
+  stepper("fig-build", {
+    w: 900, h: 330, label: "GitHub Actions build pipeline",
+    nodes: [
+      { id: "a", x: 20, y: 30, w: 190, h: 70, t: ["1. Trigger", "push or Run workflow"] },
+      { id: "b", x: 250, y: 30, w: 190, h: 70, t: ["2. Start runner", "macos-26 (clean Mac)"] },
+      { id: "c", x: 480, y: 30, w: 190, h: 70, t: ["3. Check out", "your repository"] },
+      { id: "d", x: 710, y: 30, w: 170, h: 70, t: ["4. xcodegen", "project.yml to .xcodeproj"] },
+      { id: "e", x: 710, y: 200, w: 170, h: 70, t: ["5. xcodebuild", "compile, no signing"] },
+      { id: "f", x: 480, y: 200, w: 190, h: 70, t: ["6. Pack", "Payload/Bluey.app to .ipa"] },
+      { id: "g", x: 250, y: 200, w: 190, h: 70, t: ["7. Upload", "artifact Bluey-ipa"] },
+      { id: "h", x: 20, y: 200, w: 190, h: 70, t: ["8. You download", "gh run download"] }
+    ],
+    edges: [["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"], ["e", "f"], ["f", "g"], ["g", "h"]],
+    steps: [
+      { on: ["a"], text: "A push to main (touching iOS/, Shared/ or project.yml) or a click on Run workflow starts the job." },
+      { on: ["b"], edges: [["a", "b"]], text: "GitHub boots a fresh macOS 26 virtual machine. It has Xcode with the iOS 26 SDK. Our first try used macos-15 and failed: allowBluetoothHFP needs the iOS 26 SDK." },
+      { on: ["c"], edges: [["b", "c"]], text: "actions/checkout copies your repository onto the machine." },
+      { on: ["d"], edges: [["c", "d"]], text: "brew install xcodegen, then xcodegen generate writes GooglyEyes.xcodeproj from project.yml." },
+      { on: ["e"], edges: [["d", "e"]], text: "xcodebuild compiles for a real iPhone (-sdk iphoneos), Release mode, with CODE_SIGNING_ALLOWED=NO and an empty DEVELOPMENT_TEAM. It builds Bluey.app." },
+      { on: ["f"], edges: [["e", "f"]], text: "An .ipa is a zip file. The script makes a Payload folder, copies Bluey.app into it, and zips it as Bluey.ipa. We checked the file: 11 entries, bundle ID co.visionairy.googly.phone." },
+      { on: ["g"], edges: [["f", "g"]], text: "upload-artifact saves Bluey.ipa under the name Bluey-ipa (1,067,893 bytes in run 42060418575)." },
+      { on: ["h"], edges: [["g", "h"]], text: "You fetch it with gh run download, or from the run page. The runner is deleted." }
+    ]
+  });
+
+  stepper("fig-sign", {
+    w: 900, h: 330, label: "How Sideloadly signs and installs the app",
+    nodes: [
+      { id: "ipa", x: 20, y: 130, w: 150, h: 70, t: ["Bluey.ipa", "unsigned"] },
+      { id: "side", x: 250, y: 130, w: 170, h: 70, t: ["Sideloadly", "on your PC"] },
+      { id: "apple", x: 500, y: 20, w: 190, h: 70, t: ["Apple developer", "servers"] },
+      { id: "svc", x: 500, y: 240, w: 190, h: 70, t: ["Apple Mobile", "Device Service"] },
+      { id: "phone", x: 740, y: 240, w: 140, h: 70, t: ["iPhone", "iOS checks"] }
+    ],
+    edges: [["ipa", "side"], ["side", "apple"], ["side", "svc"], ["svc", "phone"]],
+    steps: [
+      { on: ["ipa", "side"], edges: [["ipa", "side"]], text: "You drag Bluey.ipa into Sideloadly. It is a valid app with no signature." },
+      { on: ["side", "svc", "phone"], edges: [["side", "svc"], ["svc", "phone"]], text: "Sideloadly asks the USB service which phone is connected. It reads the phone's unique ID (UDID). This needs the phone unlocked and trusted." },
+      { on: ["side", "apple"], edges: [["side", "apple"]], text: "Sideloadly logs into Apple with your Apple ID (and the two-factor code). Apple creates a free development certificate, an App ID for Bluey, and a provisioning profile that lists your phone's UDID." },
+      { on: ["side", "ipa"], edges: [["ipa", "side"]], text: "Sideloadly signs Bluey.app with that certificate and embeds the profile. It also changes the bundle ID to one your account can own, because 'Use automatic bundle ID' was checked." },
+      { on: ["side", "svc", "phone"], edges: [["side", "svc"], ["svc", "phone"]], text: "The signed app goes to the phone over USB through the same service. Sideloadly shows Done." },
+      { on: ["phone"], text: "iOS checks the signature and profile. You must trust your Apple ID in Settings and turn on Developer Mode. The signature expires after about 7 days." }
+    ]
+  });
+
+  stepper("fig-usb", {
+    w: 900, h: 260, label: "How the PC talks to the iPhone over USB",
+    nodes: [
+      { id: "side", x: 20, y: 90, w: 170, h: 70, t: ["Sideloadly", "(program)"] },
+      { id: "svc", x: 260, y: 90, w: 220, h: 70, t: ["Apple Mobile Device", "Service (background)"] },
+      { id: "drv", x: 550, y: 90, w: 150, h: 70, t: ["USB driver", "Apple Mobile Device"] },
+      { id: "phone", x: 760, y: 90, w: 120, h: 70, t: ["iPhone", "(by cable)"] }
+    ],
+    edges: [["side", "svc"], ["svc", "drv"], ["drv", "phone"]],
+    steps: [
+      { on: ["phone"], text: "An iPhone does not show up as a normal USB drive. It speaks Apple's own protocol over the cable." },
+      { on: ["drv", "phone"], edges: [["drv", "phone"]], text: "The USB driver makes Windows list the phone as 'Apple Mobile Device USB Composite Device'. We saw that device only after the cable and the Trust tap worked." },
+      { on: ["svc", "drv"], edges: [["svc", "drv"]], text: "The Apple Mobile Device Service multiplexes the cable: it lets several programs talk to the phone at once. It was missing after our silent iTunes install, and it sat in StartPending for 20+ seconds after we added it." },
+      { on: ["side", "svc"], edges: [["side", "svc"]], text: "Sideloadly asks the service to list phones, to pair, and to install the app. No service means '<no devices detected>'." }
+    ]
+  });
+
+  sequence("fig-pair", {
+    label: "Discovery and pairing between Windie and Bluey",
+    a: "iPhone (Bluey)", b: "PC (Windie)",
+    msgs: [
+      { dir: "l", label: "show QR: bluey-pair:{secret}", text: "The PC makes a 256-bit secret (stored in %APPDATA%\\Googly\\pairing-secret) and shows it as a QR code. The QR code is a private credential." },
+      { dir: "r", label: "camera scans the QR", text: "The phone camera reads the code. The app saves the secret in the iPhone Keychain and closes the scan screen." },
+      { dir: "l", label: "mDNS: _googly._tcp, port, bluey-id", text: "Windie announces the service on the Wi-Fi. The bluey-id label is the first 12 bytes of SHA-256(secret), so the phone knows it found the right PC." },
+      { dir: "r", label: "TCP connect", text: "The phone opens a TCP connection to the advertised address and port. (It needs the Local Network permission.)" },
+      { dir: "l", label: "{challenge: random}", text: "The PC sends a fresh random challenge." },
+      { dir: "r", label: "{proof: HMAC(secret, challenge)}", text: "The phone proves it knows the secret without sending it." },
+      { dir: "l", label: "sealed {command: paired}", text: "Both sides derive one AES-GCM key per direction with HKDF. The PC sends its first encrypted message: paired." },
+      { dir: "l", label: "sealed {face: gazeX, gazeY, mood}", text: "From now on every message is encrypted and numbered. The PC streams the eye direction, many times per second." },
+      { dir: "r", label: "sealed {command: testNudge}", text: "The phone can send commands too, such as Test a nudge. The PC shows a bubble." }
+    ]
+  });
+
+  stepper("fig-focus", {
+    w: 900, h: 330, label: "Focus check flow",
+    nodes: [
+      { id: "t", x: 20, y: 30, w: 170, h: 60, t: ["Timer", "30 s (10 s dev mode)"] },
+      { id: "cap", x: 250, y: 30, w: 190, h: 60, t: ["Screenshot", "main display"] },
+      { id: "ocr", x: 500, y: 30, w: 170, h: 60, t: ["Windows OCR", "+ front app name"] },
+      { id: "dec", x: 710, y: 30, w: 170, h: 60, t: ["OpenAI Decisions", "gpt-6-luna"] },
+      { id: "pol", x: 710, y: 220, w: 170, h: 60, t: ["Nudge policy", "enough evidence?"] },
+      { id: "nud", x: 480, y: 220, w: 190, h: 60, t: ["OpenAI Responses", "gpt-5.5: 1 sentence"] },
+      { id: "pc", x: 250, y: 220, w: 190, h: 60, t: ["Bubble on PC", "+ pointer"] },
+      { id: "ph", x: 20, y: 220, w: 170, h: 60, t: ["Chirp on phone", "+ text"] }
+    ],
+    edges: [["t", "cap"], ["cap", "ocr"], ["ocr", "dec"], ["dec", "pol"], ["pol", "nud"], ["nud", "pc"], ["pc", "ph"]],
+    steps: [
+      { on: ["t"], text: "While a focus session runs, a timer fires every 30 real seconds (every 10 in Developer Mode)." },
+      { on: ["cap"], edges: [["t", "cap"]], text: "Windie captures the main display. Its own windows are excluded from the capture (SetWindowDisplayAffinity)." },
+      { on: ["ocr"], edges: [["cap", "ocr"]], text: "Windows' built-in OCR reads text on the screen. Windie also notes the name of the front app." },
+      { on: ["dec"], edges: [["ocr", "dec"]], text: "A reduced JPEG, the OCR text, your task and recent results go to the Decisions API (POST /v1/decisions, model gpt-6-luna). It answers on_task, off_task or uncertain, with probabilities." },
+      { on: ["pol"], edges: [["dec", "pol"]], text: "Only consecutive off-task answers count. A nudge needs 120 to 240 seconds of evidence (40 to 80 focus seconds in Developer Mode)." },
+      { on: ["nud"], edges: [["pol", "nud"]], text: "A second request, to the Responses API (POST /v1/responses, model gpt-5.5), writes one gentle sentence and may choose an OCR line to point at." },
+      { on: ["pc"], edges: [["nud", "pc"]], text: "The PC shows the text bubble, and the blue cursor may point at the chosen line." },
+      { on: ["ph"], edges: [["pc", "ph"]], text: "The same text goes to the phone over the encrypted channel, with a chirp." }
+    ]
+  });
+
+  // ---------- Interactive eyes demo ----------
+  (function () {
+    var screen = document.getElementById("screen"); if (!screen) return;
+    var dot = document.getElementById("dot"), vp = document.getElementById("vphone");
+    var pl = document.getElementById("pl"), pr = document.getElementById("pr");
+    var ll = document.getElementById("ll"), lr = document.getElementById("lr");
+    var out = document.getElementById("readout");
+    var pp = 0.5, cx = null, cy = null, lastMove = performance.now();
+    var cur = { x: 0, y: -0.15 }, sent = [], lastSent = null, lastSentAt = 0;
+    function dims() { var r = screen.getBoundingClientRect(); return { W: r.width, H: r.height, L: r.left, T: r.top }; }
+    function place() { var d = dims(); vp.style.left = (d.W * pp) + "px"; }
+    Array.prototype.forEach.call(document.getElementsByName("pp"), function (r) {
+      r.onchange = function () { pp = parseFloat(r.value); place(); };
+    });
+    screen.addEventListener("pointermove", function (e) {
+      var d = dims(); cx = e.clientX - d.L; cy = e.clientY - d.T; lastMove = performance.now();
+      dot.style.left = cx + "px"; dot.style.top = cy + "px";
+    });
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function frame(now) {
+      var d = dims(), W = d.W, H = d.H;
+      if (cx === null) { cx = W * 0.5; cy = H * 0.4; }
+      var phoneX = W * pp, phoneY = H + H * 0.18;
+      var gx = clamp((cx - phoneX) / (W * 0.5), -1, 1);
+      var gy = -Math.max(0.15, Math.min(1, (phoneY - cy) / (H * 1.1)));
+      // smooth toward the target (stand-in for the phone's spring)
+      cur.x += (gx - cur.x) * 0.25; cur.y += (gy - cur.y) * 0.25;
+      pl.style.left = (18 + cur.x * 16) + "px"; pl.style.top = (18 + cur.y * 16) + "px";
+      pr.style.left = (18 + cur.x * 16) + "px"; pr.style.top = (18 + cur.y * 16) + "px";
+      var idle = (now - lastMove) / 1000, mood = "listening", lid = "0%";
+      if (idle > 15) { mood = "resting"; lid = "100%"; } else if (idle > 5) { mood = "sleepy"; lid = "55%"; }
+      ll.style.height = lid; lr.style.height = lid;
+      // would-send rule: skip when change < 0.004 unless one second passed
+      var t = now / 1000;
+      if (!lastSent || t - lastSentAt >= 1 || (t - lastSentAt >= 0.016 && (Math.abs(lastSent.gx - gx) >= 0.004 || Math.abs(lastSent.gy - gy) >= 0.004 || lastSent.mood !== mood))) {
+        lastSent = { gx: gx, gy: gy, mood: mood }; lastSentAt = t; sent.push(t);
+      }
+      while (sent.length && t - sent[0] > 1) sent.shift();
+      out.textContent = "gazeX: " + gx.toFixed(2) + "\ngazeY: " + gy.toFixed(2) + "\nmood: " + mood + "\npackets in the last second: " + sent.length;
+      requestAnimationFrame(frame);
+    }
+    place(); window.addEventListener("resize", place);
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -13,6 +13,8 @@ Bluey follows the mouse on a real Windows laptop and a real iPhone (recorded 202
 
 The demo page is served by GitHub Pages: <https://az9713.github.io/windie-focus-me/docs/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
 
+**How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/windie-focus-me/docs/how-it-works.html>.
+
 ## Clone and independent work
 
 This repository is a clone of Riley's project. It is independent development. Riley did not write, review or endorse the Windows code. Riley's Mac and iPhone code is kept as it was, under the same [Unlicense](LICENSE). The original README follows below the line, unchanged except that the old `## Windows` section moved here.
