@@ -141,6 +141,17 @@ Bluey appears in the system tray. Windows Firewall asks about Python on the firs
 
 A free Apple ID signature expires after about 7 days, and the app then stops opening until you sign it again. This limit is from memory and was not checked here.
 
+## Remove Bluey and restore the iPhone
+
+These steps are from knowledge of iOS and were not checked on a device. Menu names can differ by iOS version.
+
+1. Press and hold the Bluey icon. Tap **Remove App**, then **Delete App**, then **Delete**. This removes the app data and its camera, microphone and Local Network permissions.
+2. Open Settings > General > VPN & Device Management. Under **Developer App**, tap the profile that shows your Apple ID. Tap **Delete App** or **Remove Profile**, and confirm. If the section is absent, go to step 3.
+3. Open Settings > Privacy & Security. Scroll to the bottom and tap **Developer Mode**. Turn it off. Tap **Restart** when iOS asks.
+4. Optional: to make the iPhone forget "Trust This Computer", open Settings > General > Transfer or Reset iPhone > Reset > **Reset Location & Privacy**. This also resets the location and privacy choices of all apps.
+
+Apple keeps the App ID that Sideloadly registered for your Apple ID, and a free account cannot delete it. On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings > Apps. Quit Windie with **Quit Bluey** in the tray menu.
+
 ## Test the Windows and iPhone pair
 
 The pairing QR code is a private credential. Do not share a picture of it.
