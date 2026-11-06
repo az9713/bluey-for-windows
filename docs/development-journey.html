@@ -130,6 +130,21 @@
   <li><strong>Mermaid not rendered.</strong> I wrote four Mermaid diagrams and could not render them locally. They render on GitHub only. I told the user to check the repo page.</li>
 </ol>
 
+<h2>6a. Installing and pairing on the real iPhone (2026-11-05)</h2>
+<p>This part comes from the live transcript. It took about ten steps, and four of them hit a problem.</p>
+<ol>
+  <li><strong>My iTunes instruction was out of date.</strong> I told the user to download iTunes from apple.com, not the Microsoft Store. The screenshot showed <code>apple.com/itunes/</code> redirecting to the Microsoft Store. I found Apple's direct link <code>https://www.apple.com/itunes/download/win64</code>. It returned a 301 to <code>iTunes64Setup.exe</code> (202,558,432 bytes). The file's signature was valid, signer Apple Inc.</li>
+  <li><strong>The silent iTunes install skipped the driver service.</strong> I ran <code>iTunes64Setup.exe /quiet /norestart</code> and it exited with 0. Windows then had no service "Apple Mobile Device Service" and no folder <code>C:\Program Files\Common Files\Apple\Mobile Device Support</code>. I extracted the bundle with <code>/extract</code>, checked that <code>AppleMobileDeviceSupport64.msi</code> (32.8 MB) was signed by Apple Inc., and installed it with <code>msiexec /i ... /qn /norestart</code>. The service then stayed in <code>StartPending</code> for more than 20 seconds. I did not force it.</li>
+  <li><strong>The Sideloadly installer is unsigned.</strong> <code>Get-AuthenticodeSignature</code> returned <code>NotSigned</code>. I disclosed this, with the SHA-256 <code>2E7D9A80BCD7912A9A2DAE1969645F8AF386AF46802A79303E727773B506362E</code>, and the user chose to install. The first attempt failed with "The operation was canceled by the user", because the administrator prompt was not accepted. The second attempt worked.</li>
+  <li><strong>Sideloadly showed no device.</strong> The first screenshot read <code>&lt;no devices detected&gt;</code>. A Windows device query found the iPhone only over Bluetooth, not USB. After the user replugged the cable and tapped Trust, Windows listed <code>Apple Mobile Device USB Composite Device</code> and Sideloadly listed <code>iPhone (27.2) ... @USB</code>.</li>
+  <li><strong>Wrong Apple ID text.</strong> The Apple ID field held <code>az9713</code>, which is not an email. The user corrected it, and Sideloadly then reported <code>[9 App IDs Remaining, updates 6d]</code> and <strong>Done.</strong></li>
+  <li><strong>Developer Mode confusion.</strong> The user did not see a Developer Mode question at first. The phone later restarted for it, which showed the install had worked. The user then could not find the app, so I read the IPA's <code>Info.plist</code>: display name <code>Bluey</code>, bundle ID <code>co.visionairy.googly.phone</code>, and no app icon, so iOS shows a plain icon.</li>
+  <li><strong>Windie was not running.</strong> No process matched <code>bluey.py</code>. I started it with <code>pythonw bluey.py --pair</code> (launcher PID 37828, app PID 13428).</li>
+  <li><strong>The camera closed as soon as it saw the QR code.</strong> The user thought this was a fault. The scan screen in <code>iOS/Sources/QRPairingView.swift</code> calls <code>dismiss()</code> as soon as <code>link.pair(record)</code> succeeds, so closing is the success path. A TCP connection from the phone on the local network to port 57251 of the PC confirmed the pairing.</li>
+</ol>
+<p>Result: the user confirmed that Bluey's eyes track the mouse, and that <strong>Test a nudge</strong> shows a text bubble on the laptop. This is the first real-iPhone test. The Python code needed no change.</p>
+<p>Fragility: the Windie mDNS socket showed ports on <code>127.0.0.1</code> and a VPN address, not on the Wi-Fi address. The phone connected anyway. If a later connection fails, turn off Tailscale first.</p>
+
 <h2>7. Verification</h2>
 <table>
   <tr><th>Claim</th><th>How it was checked</th></tr>
@@ -140,12 +155,13 @@
   <tr><td>QR code is valid</td><td>OpenCV decoded it to a valid pairing record.</td></tr>
   <tr><td>Codex starts</td><td><code>codex app-server</code> initialize worked. No job was started.</td></tr>
   <tr><td>Performance</td><td>Mean paint 3.1 ms. Idle CPU 2.2% of one core.</td></tr>
+  <tr><td>Real iPhone pairs</td><td>Sideloadly reported Done. A TCP connection from the phone to port 57251 was seen on the PC. The user confirmed eyes tracking the mouse and the nudge bubble.</td></tr>
   <tr><td>iPhone app compiles</td><td>GitHub Actions run <code>42060418575</code> concluded <code>success</code>, and the artifact <code>Bluey-ipa</code> exists at 1,067,893 bytes.</td></tr>
   <tr><td>Nothing private was pushed</td><td>The file list was read before the first commit. A search for personal strings and key patterns found only the test name, which was changed.</td></tr>
 </table>
 <p><strong>Not verified:</strong></p>
 <ul>
-  <li>Pairing with a real iPhone. The <code>.ipa</code> was built but not installed.</li>
+  <li>The phone chirp and nudge text after <strong>Test a nudge</strong>. The user confirmed the laptop bubble only.</li>
   <li>Real OpenAI calls. <code>--focus-api-test</code> costs money and the user has not allowed it. No money was spent on the API.</li>
   <li><code>click</code>, <code>type_text</code>, <code>press_keys</code>, <code>scroll</code> and <code>drag</code> on a real window.</li>
   <li>Hold-to-talk voice, <code>transcribe</code>, <code>open_app</code> launch, and a real Codex job.</li>
@@ -172,11 +188,11 @@
   <tr><td>Windows app</td><td>Done. 35 tests pass. About 3,872 app lines and 490 test lines.</td></tr>
   <tr><td>Repository</td><td>Public. Commits <code>6e4475e</code>, the runner fix, and <code>645035a</code> (README) are on <code>main</code>.</td></tr>
   <tr><td>iPhone build</td><td>Built. The artifact <code>Bluey-ipa</code> is ready to download.</td></tr>
-  <tr><td>Real iPhone</td><td>Not installed, not paired.</td></tr>
+  <tr><td>Real iPhone</td><td>Installed with Sideloadly and paired on 2026-11-05. Eyes follow the mouse. <strong>Test a nudge</strong> shows a bubble on the laptop.</td></tr>
 </table>
 <h3>Open items for the next session</h3>
 <ol>
-  <li><strong>Install and pair.</strong> Download the artifact, sign it with Sideloadly, install it, and scan the QR code from the tray menu. If pairing fails, compare <code>Windows/link.py</code> with <code>iOS/Sources/MacLink.swift</code> and <code>Shared/SecurePairing.swift</code>.</li>
+  <li><strong>Real focus check.</strong> Run a task and open an unrelated page with Developer Mode on. It sends screenshots to OpenAI and costs money, so it needs the user's permission. Also check the phone chirp.</li>
   <li><strong>Pages.</strong> Choose: turn it off (recommended, since the repository has no HTML docs of its own), serve only <code>/docs</code>, or leave it. This page lives in <code>docs/</code>, so it is only reachable if Pages stays on.</li>
   <li><strong>Workflow permissions.</strong> Add <code>permissions: contents: read</code> to <code>ios-ipa.yml</code>. Not done: the user has not answered.</li>
   <li><strong>Shortcut guard.</strong> Check whether <code>Windows/realtime.py</code> lets "windows+l" through, then fix it by building the check from <code>control.parse_combo</code>. Not done.</li>

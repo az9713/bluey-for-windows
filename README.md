@@ -138,7 +138,7 @@ The pairing QR code is a private credential. Do not share a picture of it.
 **Part 1: get the iPhone app.**
 
 1. Run `gh run download <run-id> -R az9713/windie-focus-me`, or download `Bluey-ipa` from the run page in the **Actions** tab. Unzip it to get `Bluey.ipa`.
-2. Install Sideloadly and iTunes (from apple.com, not the Microsoft Store) on Windows.
+2. Install Sideloadly on Windows (`https://sideloadly.io/SideloadlySetup64.exe`; the installer is unsigned). Install the classic iTunes from Apple's direct link `https://www.apple.com/itunes/download/win64`, because `apple.com/itunes` now sends you to the Microsoft Store. Sideloadly needs the service "Apple Mobile Device Service". If it is missing after the iTunes install, run `iTunes64Setup.exe /extract <folder>` and install `AppleMobileDeviceSupport64.msi` from that folder.
 3. Connect the iPhone by USB. Tap Trust.
 4. Drag `Bluey.ipa` into Sideloadly. Enter an Apple ID. Click Start.
 5. On the iPhone, trust your Apple ID in Settings > General > VPN & Device Management. Turn on Developer Mode if asked.
@@ -191,11 +191,12 @@ To test without a phone, run `.venv\Scripts\python test_bluey.py` from `Windows/
 - The real app ran against a fake OpenAI server, with a scripted fake phone over real mDNS. It did off-task checks, a nudge, pointing and a chirp.
 - OCR, capture exclusion, `codex app-server` start-up and QR decoding passed.
 - The iPhone workflow built `Bluey.ipa` on a GitHub runner.
+- On 2026-11-05, a real iPhone (iOS 27.2) installed `Bluey.ipa` with Sideloadly and paired with Windie by QR code. Bluey's eyes followed the mouse, and **Test a nudge** showed a text bubble on the laptop.
 - Idle CPU is 2.2% of one core. Mean paint time is 3.1 ms.
 
 **Not tested yet:**
 
-- Pairing with a real iPhone.
+- The phone chirp and nudge text after **Test a nudge** (not confirmed).
 - Real OpenAI calls (`bluey.py --focus-api-test` costs money).
 - Mouse and keyboard injection into a real window, hold-to-talk voice, transcription, app launch and a real Codex job.
 
