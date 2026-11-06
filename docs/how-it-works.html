@@ -190,6 +190,15 @@ steps:
 <li><strong>Why there were only two runs:</strong> the workflow starts only when a push changes <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow file. Later pushes that only changed the README, the docs, the demo video or the explainer pages did not start it. A person can also start it by hand with "Run workflow" (<code>workflow_dispatch</code>).</li>
 </ul>
 <p>Cost: GitHub macOS minutes are free for public repositories and limited for private ones (from memory, not checked). This repository is public.</p>
+<h3>The local copy: the <code>bluey-ipa</code> folder</h3>
+<p>A folder named <code>bluey-ipa</code> in the Downloads folder of the laptop holds the app file that was installed on the iPhone. It is not part of the repository.</p>
+<ul>
+<li><strong>Contents:</strong> one file, <code>bluey-ipa/Bluey-ipa/Bluey.ipa</code>, 1,080,123 bytes, saved 2026-11-05 at 13:08 local time. The folder <code>Bluey-ipa</code> inside it carries the artifact name.</li>
+<li><strong>Origin:</strong> the artifact <code>Bluey-ipa</code> of run <code>42060418575</code> (runner <code>macos-26</code>, commit <code>10dbe91</code>), downloaded from the Actions tab and unzipped. The workflow step <code>upload-artifact</code> created the artifact (see the table above). The run page shows the artifact size as 1,067,893 bytes, the compressed download. The unzipped file is 1,080,123 bytes.</li>
+<li><strong>Signature:</strong> none. The build turned signing off. Sideloadly signed a copy of the app with the Apple ID during the install. The file in the folder stays unsigned.</li>
+<li><strong>Use:</strong> Sideloadly was the only program that read the file. Windie does not use it.</li>
+<li><strong>Safe to delete:</strong> yes. The run page keeps the artifact until GitHub's retention period ends (the period was not checked), so you can download it again.</li>
+</ul>
 
 <h2 id="sign">6. Problem A, step 2: signing, Apple ID and Sideloadly</h2>
 <h3>Why iOS needs a signature</h3>
