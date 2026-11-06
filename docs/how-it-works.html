@@ -91,6 +91,7 @@
   <a href="#broke">12. What broke</a>
   <a href="#state">13. What is verified</a>
   <a href="#gloss">14. Glossary</a>
+  <a href="#remove">15. Remove Bluey</a>
 </nav>
 
 <h2 id="short">1. The short answer</h2>
@@ -413,6 +414,19 @@ packets in the last second: 0</div>
 </table>
 
 <p class="muted">Related pages: <a href="demo.html">the demo video</a>, <a href="development-journey.html">the development journey</a> (how it was built, with the failures), and the <a href="https://github.com/az9713/windie-focus-me">repository README</a>.</p>
+<h2 id="remove">15. Remove Bluey and restore the iPhone</h2>
+<p>These steps are from knowledge of iOS and were not checked on a device. Menu names can differ by iOS version.</p>
+<ol>
+  <li>Press and hold the Bluey icon. Tap <strong>Remove App</strong>, then <strong>Delete App</strong>, then <strong>Delete</strong>. This removes the app data and its camera, microphone and Local Network permissions.</li>
+  <li>Open Settings &gt; General &gt; VPN &amp; Device Management. Under <strong>Developer App</strong>, tap the profile that shows your Apple ID. Tap <strong>Delete App</strong> or <strong>Remove Profile</strong>, and confirm. If the section is absent, go to step 3.</li>
+  <li>Open Settings &gt; Privacy &amp; Security. Scroll to the bottom and tap <strong>Developer Mode</strong>. Turn it off. Tap <strong>Restart</strong> when iOS asks.</li>
+  <li>Optional: to make the iPhone forget "Trust This Computer", open Settings &gt; General &gt; Transfer or Reset iPhone &gt; Reset &gt; <strong>Reset Location &amp; Privacy</strong>. This also resets the location and privacy choices of all apps.</li>
+</ol>
+<div class="box warn">
+<p>Apple keeps the App ID that Sideloadly registered for your Apple ID. A free account cannot delete it.</p>
+<p>On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings &gt; Apps. Quit Windie with <strong>Quit Bluey</strong> in the tray menu. Do not kill it by name.</p>
+</div>
+
 </main>
 
 <script>
