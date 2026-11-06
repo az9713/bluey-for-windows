@@ -9,11 +9,11 @@ Windie is a Windows version of **Bluey**, the blueberry focus friend made by Ril
 
 Bluey follows the mouse on a real Windows laptop and a real iPhone (recorded 2026-11-05, 10 seconds, no sound). Click the picture to play the video on the demo page.
 
-[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/windie-focus-me/docs/demo.html)
+[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/windie-focus-me/demo.html)
 
-The demo page is served by GitHub Pages: <https://az9713.github.io/windie-focus-me/docs/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
+The demo page is served by GitHub Pages: <https://az9713.github.io/windie-focus-me/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
 
-**How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/windie-focus-me/docs/how-it-works.html>.
+**How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/windie-focus-me/how-it-works.html>.
 
 ## Clone and independent work
 
