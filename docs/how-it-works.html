@@ -61,11 +61,11 @@
   #screen .hint { position:absolute; left:10px; top:8px; color:#b6c2d4; font-size:.85rem; pointer-events:none; }
   #dot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:var(--orange); pointer-events:none; left:50%; top:40%; }
   #screenwrap { position:relative; margin-bottom:34px; }
-  #vphone { position:absolute; width:56px; height:22px; margin-left:-28px; top:calc(100% + 8px); border:2px dashed #94a3b8; border-radius:6px; color:#b6c2d4; font-size:.7rem; text-align:center; line-height:18px; pointer-events:none; }
+  #vphone { position:absolute; width:72px; height:28px; margin-left:-36px; top:calc(100% + 8px); border:2px dashed #94a3b8; border-radius:6px; color:#b6c2d4; font-size:.8rem; text-align:center; line-height:24px; padding:0 8px; box-sizing:border-box; pointer-events:none; }
   #phonebox { background:#000; border:3px solid #64748b; border-radius:22px; height:200px; position:relative; overflow:hidden; }
   .eye { position:absolute; top:45px; width:62px; height:62px; background:#fff; border-radius:50%; overflow:hidden; }
   .pupil { position:absolute; width:26px; height:26px; background:#111; border-radius:50%; left:18px; top:18px; }
-  .lid { position:absolute; left:0; right:0; top:0; height:0%; background:#2563eb; transition:height .4s; }
+  .lid { position:absolute; left:0; right:0; top:0; height:100%; background:#2563eb; transform:scaleY(0); transform-origin:top; transition:transform .4s; }
   #blob { position:absolute; left:8%; right:8%; bottom:-40px; height:120px; background:#2563eb; border-radius:50% 50% 0 0; }
   #readout { font:13px ui-monospace,Consolas,monospace; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-top:8px; white-space:pre-wrap; color:var(--head); }
 </style>
@@ -176,6 +176,18 @@ steps:
 <div class="box warn">
 <p><strong>The failure we hit here.</strong> The first run used <code>macos-15</code> and stopped with <code>iOS/Sources/LiveVoice.swift:487:97: error: ... has no member 'allowBluetoothHFP'</code> and <code>xcodebuild</code> exit code 65. That Bluetooth option exists only in the iOS 26 SDK, and the <code>macos-15</code> image has an older Xcode. Changing <code>runs-on</code> to <code>macos-26</code> fixed it. Run <code>42060418575</code> succeeded and produced a 1,067,893-byte artifact named <code>Bluey-ipa</code>.</p>
 </div>
+<h3>Build history: was a macOS runner really used?</h3>
+<p>Yes. A rented Mac built the iPhone app twice on 2026-11-05. Both runs started with a push to <code>main</code>. The list comes from <code>gh run list --workflow ios-ipa.yml</code>.</p>
+<table>
+<tr><th>Run ID</th><th>Runner</th><th>Commit</th><th>Result</th><th>Started (UTC)</th></tr>
+<tr><td><code>42060209179</code></td><td><code>macos-15</code></td><td><code>6e4475e</code></td><td class="bad">failure (<code>xcodebuild</code> exit code 65)</td><td>15:57:26</td></tr>
+<tr><td><code>42060418575</code></td><td><code>macos-26</code></td><td><code>10dbe91</code></td><td class="ok">success, artifact <code>Bluey-ipa</code></td><td>15:58:44</td></tr>
+</table>
+<ul>
+<li><strong>What the runner did:</strong> it compiled the iPhone app and packed the unsigned <code>Bluey.ipa</code>. The second run made the file that was later installed on the iPhone.</li>
+<li><strong>What the runner did not do:</strong> it did not run Windie. Windie runs on the Windows laptop. No Mac that you own was used. GitHub deletes the rented Mac after each run.</li>
+<li><strong>Why there were only two runs:</strong> the workflow starts only when a push changes <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow file. Later pushes that only changed the README, the docs, the demo video or the explainer pages did not start it. A person can also start it by hand with "Run workflow" (<code>workflow_dispatch</code>).</li>
+</ul>
 <p>Cost: GitHub macOS minutes are free for public repositories and limited for private ones (from memory, not checked). This repository is public.</p>
 
 <h2 id="sign">6. Problem A, step 2: signing, Apple ID and Sideloadly</h2>
@@ -717,9 +729,9 @@ packets in the last second: 0</div>
       cur.x += (gx - cur.x) * 0.25; cur.y += (gy - cur.y) * 0.25;
       pl.style.left = (18 + cur.x * 16) + "px"; pl.style.top = (18 + cur.y * 16) + "px";
       pr.style.left = (18 + cur.x * 16) + "px"; pr.style.top = (18 + cur.y * 16) + "px";
-      var idle = (now - lastMove) / 1000, mood = "listening", lid = "0%";
-      if (idle > 15) { mood = "resting"; lid = "100%"; } else if (idle > 5) { mood = "sleepy"; lid = "55%"; }
-      ll.style.height = lid; lr.style.height = lid;
+      var idle = (now - lastMove) / 1000, mood = "listening", lid = 0;
+      if (idle > 15) { mood = "resting"; lid = 1; } else if (idle > 5) { mood = "sleepy"; lid = 0.55; }
+      ll.style.transform = "scaleY(" + lid + ")"; lr.style.transform = ll.style.transform;
       // would-send rule: skip when change < 0.004 unless one second passed
       var t = now / 1000;
       if (!lastSent || t - lastSentAt >= 1 || (t - lastSentAt >= 0.016 && (Math.abs(lastSent.gx - gx) >= 0.004 || Math.abs(lastSent.gy - gy) >= 0.004 || lastSent.mood !== mood))) {
