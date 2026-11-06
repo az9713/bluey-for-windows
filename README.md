@@ -5,6 +5,14 @@ Windie is a Windows version of **Bluey**, the blueberry focus friend made by Ril
 - **Riley's video:** [Bluey on YouTube](https://www.youtube.com/watch?v=8QPd6WD9Zzg)
 - **Riley's repository:** [rbrown101010/bluey-by-riley](https://github.com/rbrown101010/bluey-by-riley)
 
+## Demo
+
+Bluey follows the mouse on a real Windows laptop and a real iPhone (recorded 2026-11-05, 10 seconds, no sound). Click the picture to play the video on the demo page.
+
+[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/windie-focus-me/docs/demo.html)
+
+The demo page is served by GitHub Pages: <https://az9713.github.io/windie-focus-me/docs/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
+
 ## Clone and independent work
 
 This repository is a clone of Riley's project. It is independent development. Riley did not write, review or endorse the Windows code. Riley's Mac and iPhone code is kept as it was, under the same [Unlicense](LICENSE). The original README follows below the line, unchanged except that the old `## Windows` section moved here.

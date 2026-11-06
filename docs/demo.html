@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Windie demo: Bluey follows the mouse</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0f172a; color: #cbd5e1; font: 16px/1.65 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { color: #e2e8f0; font-size: 1.8rem; margin: 0 0 8px; }
+  video { width: 100%; height: auto; background: #000; border: 1px solid #334155; border-radius: 8px; margin: 16px 0; }
+  code { background: #1e293b; color: #e2e8f0; padding: 1px 5px; border-radius: 4px; }
+  a { color: #2dd4bf; }
+  .muted { color: #94a3b8; }
+</style>
+</head>
+<body>
+<main>
+<h1>Windie demo: Bluey follows the mouse</h1>
+<p class="muted">Recorded on 2026-11-05. A Windows 11 laptop runs Windie. An iPhone runs Bluey, installed with Sideloadly.</p>
+
+<video controls autoplay muted loop playsinline preload="auto" poster="demo/windie-demo-poster.png">
+  <source src="demo/windie-demo.mp4" type="video/mp4">
+  Your browser cannot play this video. <a href="demo/windie-demo.mp4">Download it</a>.
+</video>
+
+<h2>What the video shows</h2>
+<ul>
+  <li>The iPhone stands in front of the laptop, in landscape. It shows Bluey.</li>
+  <li>The mouse cursor moves across the laptop screen. Bluey's eyes on the phone look toward the cursor.</li>
+  <li>Bluey's eyes are closed at the start (asleep), and open after that.</li>
+</ul>
+
+<h2>What it does not show</h2>
+<ul>
+  <li>The video has no sound, so it does not show the chirp.</li>
+  <li>The phone text "Voice could not connect" is visible in the video. Voice was not working in this recording.</li>
+  <li>A blur hides the clock at the lower right of the laptop screen. The video is 10 seconds long, cropped from a longer recording.</li>
+  <li>The recording was made with a hand-held camera, so the picture moves a little.</li>
+</ul>
+
+<p><a href="https://github.com/az9713/windie-focus-me">Back to the repository</a></p>
+</main>
+</body>
+</html>

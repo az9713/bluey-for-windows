@@ -122,10 +122,10 @@
   <li><strong>Thread hop.</strong> A lambda connected to a signal did not guarantee a hop to the Qt thread. Fix: <code>Dispatcher</code> with a named <code>@Slot</code> and <code>QueuedConnection</code>.</li>
   <li><strong>Hardening.</strong> Added a settings write lock, a focus ticker guard, an <code>OSError</code> guard in <code>_persist</code>, a <code>TypeError</code> catch in <code>_parse_args</code>, and a printed warning if capture exclusion is refused.</li>
   <li><strong>Process handling.</strong> The venv <code>python.exe</code> is a launcher that starts a child process. The launcher PID is not the app PID, so stopping the launcher leaves the app running. Harnesses now exit by themselves. This also followed the rule: never kill a process by name.</li>
-  <li><strong>Input test never ran.</strong> The test waits for 20 idle seconds before it injects input. The laptop stayed active for 8 minutes. Output: <code>you stayed active for 8 minutes: injection test not run</code>. This stays open.</li>
+  <li><strong>Input test never ran.</strong> The test waits for 20 idle seconds before it injects input. The laptop stayed active for 8 minutes. Output: <code>you stayed active for 8 minutes: injection test not run</code>, and the test is still open.</li>
   <li><strong>QR "no usable data".</strong> The user scanned the QR code with the iPhone Camera app and saw "no usable data". This is expected: the QR text starts with <code>bluey-pair:</code>, which only the Bluey app reads, and Bluey was not installed on the phone yet.</li>
   <li><strong>macOS runner SDK.</strong> The <code>allowBluetoothHFP</code> failure in section 5.3.</li>
-  <li><strong>Pages was already on.</strong> After the push, a <code>pages-build-deployment</code> run appeared. The Pages API showed source <code>main</code>, folder <code>/</code>, legacy build, public. I did not enable it and do not know what did. The whole branch is served at <code>https://az9713.github.io/windie-focus-me/</code>. I explained the options to the user and asked. No answer yet.</li>
+  <li><strong>Pages was already on.</strong> After the push, a <code>pages-build-deployment</code> run appeared. The Pages API showed source <code>main</code>, folder <code>/</code>, legacy build, public. I did not enable it and do not know what did. The whole branch is served at <code>https://az9713.github.io/windie-focus-me/</code>. I explained the options to the user and asked; the user has not answered.</li>
   <li><strong>Automated security reviews.</strong> Four notes arrived from a review plugin. Three were about <code>Windows/realtime.py</code>, <code>Mac/.../RealtimeHost.swift</code> and Codex permissions. The fourth flagged <code>macos-26</code> as an unknown runner label. I judged the label real (the run succeeded on a hosted runner) and said so. I did not change <code>Mac/</code>. The refused-shortcut check in <code>Windows/realtime.py</code> may miss Win-key aliases such as "windows" or "super". I have not verified that, and I asked before editing.</li>
   <li><strong>Mermaid not rendered.</strong> I wrote four Mermaid diagrams and could not render them locally. They render on GitHub only. I told the user to check the repo page.</li>
 </ol>
@@ -134,7 +134,7 @@
 <p>This part comes from the live transcript. It took about ten steps, and four of them hit a problem.</p>
 <ol>
   <li><strong>My iTunes instruction was out of date.</strong> I told the user to download iTunes from apple.com, not the Microsoft Store. The screenshot showed <code>apple.com/itunes/</code> redirecting to the Microsoft Store. I found Apple's direct link <code>https://www.apple.com/itunes/download/win64</code>. It returned a 301 to <code>iTunes64Setup.exe</code> (202,558,432 bytes). The file's signature was valid, signer Apple Inc.</li>
-  <li><strong>The silent iTunes install skipped the driver service.</strong> I ran <code>iTunes64Setup.exe /quiet /norestart</code> and it exited with 0. Windows then had no service "Apple Mobile Device Service" and no folder <code>C:\Program Files\Common Files\Apple\Mobile Device Support</code>. I extracted the bundle with <code>/extract</code>, checked that <code>AppleMobileDeviceSupport64.msi</code> (32.8 MB) was signed by Apple Inc., and installed it with <code>msiexec /i ... /qn /norestart</code>. The service then stayed in <code>StartPending</code> for more than 20 seconds. I did not force it.</li>
+  <li><strong>The silent iTunes install skipped the driver service.</strong> I ran <code>iTunes64Setup.exe /quiet /norestart</code> and it exited with 0. Windows then had no service "Apple Mobile Device Service" and no folder <code>C:\Program Files\Common Files\Apple\Mobile Device Support</code>. I extracted the bundle with <code>/extract</code>, checked that <code>AppleMobileDeviceSupport64.msi</code> (32.8 MB) was signed by Apple Inc., and installed it with <code>msiexec /i ... /qn /norestart</code>. The service then stayed in <code>StartPending</code> for more than 20 seconds, and I left it alone.</li>
   <li><strong>The Sideloadly installer is unsigned.</strong> <code>Get-AuthenticodeSignature</code> returned <code>NotSigned</code>. I disclosed this, with the SHA-256 <code>2E7D9A80BCD7912A9A2DAE1969645F8AF386AF46802A79303E727773B506362E</code>, and the user chose to install. The first attempt failed with "The operation was canceled by the user", because the administrator prompt was not accepted. The second attempt worked.</li>
   <li><strong>Sideloadly showed no device.</strong> The first screenshot read <code>&lt;no devices detected&gt;</code>. A Windows device query found the iPhone only over Bluetooth, not USB. After the user replugged the cable and tapped Trust, Windows listed <code>Apple Mobile Device USB Composite Device</code> and Sideloadly listed <code>iPhone (27.2) ... @USB</code>.</li>
   <li><strong>Wrong Apple ID text.</strong> The Apple ID field held <code>az9713</code>, which is not an email. The user corrected it, and Sideloadly then reported <code>[9 App IDs Remaining, updates 6d]</code> and <strong>Done.</strong></li>
@@ -153,7 +153,7 @@
   <tr><td>Developer-mode paths</td><td><code>--focus-developer-test</code> (first check at 10.5 real seconds) and <code>--focus-nudge-test</code>, both against the fake server.</td></tr>
   <tr><td>Overlay stays out of the capture</td><td>OCR read a test word on the real translucent overlay with exclusion off, and did not read it with exclusion on.</td></tr>
   <tr><td>QR code is valid</td><td>OpenCV decoded it to a valid pairing record.</td></tr>
-  <tr><td>Codex starts</td><td><code>codex app-server</code> initialize worked. No job was started.</td></tr>
+  <tr><td>Codex starts</td><td><code>codex app-server</code> initialize worked, with no job started.</td></tr>
   <tr><td>Performance</td><td>Mean paint 3.1 ms. Idle CPU 2.2% of one core.</td></tr>
   <tr><td>Real iPhone pairs</td><td>Sideloadly reported Done. A TCP connection from the phone to port 57251 was seen on the PC. The user confirmed eyes tracking the mouse and the nudge bubble.</td></tr>
   <tr><td>iPhone app compiles</td><td>GitHub Actions run <code>42060418575</code> concluded <code>success</code>, and the artifact <code>Bluey-ipa</code> exists at 1,067,893 bytes.</td></tr>
@@ -162,7 +162,7 @@
 <p><strong>Not verified:</strong></p>
 <ul>
   <li>The phone chirp and nudge text after <strong>Test a nudge</strong>. The user confirmed the laptop bubble only.</li>
-  <li>Real OpenAI calls. <code>--focus-api-test</code> costs money and the user has not allowed it. No money was spent on the API.</li>
+  <li>Real OpenAI calls. <code>--focus-api-test</code> costs money and the user has not allowed it, so no money was spent on the API.</li>
   <li><code>click</code>, <code>type_text</code>, <code>press_keys</code>, <code>scroll</code> and <code>drag</code> on a real window.</li>
   <li>Hold-to-talk voice, <code>transcribe</code>, <code>open_app</code> launch, and a real Codex job.</li>
   <li>The Mermaid diagrams on GitHub.</li>
@@ -194,8 +194,8 @@
 <ol>
   <li><strong>Real focus check.</strong> Run a task and open an unrelated page with Developer Mode on. It sends screenshots to OpenAI and costs money, so it needs the user's permission. Also check the phone chirp.</li>
   <li><strong>Pages.</strong> Choose: turn it off (recommended, since the repository has no HTML docs of its own), serve only <code>/docs</code>, or leave it. This page lives in <code>docs/</code>, so it is only reachable if Pages stays on.</li>
-  <li><strong>Workflow permissions.</strong> Add <code>permissions: contents: read</code> to <code>ios-ipa.yml</code>. Not done: the user has not answered.</li>
-  <li><strong>Shortcut guard.</strong> Check whether <code>Windows/realtime.py</code> lets "windows+l" through, then fix it by building the check from <code>control.parse_combo</code>. Not done.</li>
+  <li><strong>Workflow permissions.</strong> Add <code>permissions: contents: read</code> to <code>ios-ipa.yml</code>, and it is not done because the user has not answered.</li>
+  <li><strong>Shortcut guard.</strong> Check whether <code>Windows/realtime.py</code> lets "windows+l" through, then fix it by building the check from <code>control.parse_combo</code>; this is not done.</li>
   <li><strong>Input test.</strong> Run <code>Windows\smoke.py</code> while the laptop is idle (the file is in the session scratchpad, which is lost after the session).</li>
   <li><strong>Real API test.</strong> Run <code>--focus-api-test</code> only with the user's permission.</li>
 </ol>
