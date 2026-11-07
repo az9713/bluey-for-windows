@@ -9,11 +9,11 @@ Windie is a Windows version of **Bluey**, the blueberry focus friend made by Ril
 
 Bluey follows the mouse on a real Windows laptop and a real iPhone (recorded 2026-11-05, 10 seconds, no sound). Click the picture to play the video on the demo page.
 
-[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/windie-focus-me/demo.html)
+[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/bluey-for-windows/demo.html)
 
-The demo page is served by GitHub Pages: <https://az9713.github.io/windie-focus-me/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
+The demo page is served by GitHub Pages: <https://az9713.github.io/bluey-for-windows/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
 
-**How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/windie-focus-me/how-it-works.html>.
+**How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/bluey-for-windows/how-it-works.html>.
 
 ## Clone and independent work
 
@@ -158,7 +158,7 @@ The pairing QR code is a private credential. Do not share a picture of it.
 
 **Part 1: get the iPhone app.**
 
-1. Run `gh run download <run-id> -R az9713/windie-focus-me`, or download `Bluey-ipa` from the run page in the **Actions** tab. Unzip it to get `Bluey.ipa`.
+1. Run `gh run download <run-id> -R az9713/bluey-for-windows`, or download `Bluey-ipa` from the run page in the **Actions** tab. Unzip it to get `Bluey.ipa`.
 2. Install Sideloadly on Windows (`https://sideloadly.io/SideloadlySetup64.exe`; the installer is unsigned). Install the classic iTunes from Apple's direct link `https://www.apple.com/itunes/download/win64`, because `apple.com/itunes` now sends you to the Microsoft Store. Sideloadly needs the service "Apple Mobile Device Service". If it is missing after the iTunes install, run `iTunes64Setup.exe /extract <folder>` and install `AppleMobileDeviceSupport64.msi` from that folder.
 3. Connect the iPhone by USB. Tap Trust.
 4. Drag `Bluey.ipa` into Sideloadly. Enter an Apple ID. Click Start.
