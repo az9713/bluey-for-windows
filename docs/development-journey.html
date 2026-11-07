@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Development Journey: Windie, Bluey for Windows</title>
+<title>Development Journey: Bluey for Windows</title>
 <style>
   :root { color-scheme: dark; }
   body { margin: 0; background: #0f172a; color: #cbd5e1; font: 16px/1.65 system-ui, "Segoe UI", sans-serif; }
@@ -30,7 +30,7 @@
 <body>
 <main>
 
-<h1>Development Journey: Windie, Bluey for Windows</h1>
+<h1>Development Journey: Bluey for Windows</h1>
 <p class="muted">A warts-and-all account of one build, from a question about Riley's project to a Windows app, a GitHub repository and an iPhone build.</p>
 
 <div class="meta">
@@ -105,7 +105,7 @@
 ** BUILD FAILED **   (xcodebuild exit code 65)</code></pre>
 <p><code>allowBluetoothHFP</code> needs the iOS 26 SDK. The <code>macos-15</code> image has an older Xcode. I changed <code>runs-on</code> to <code>macos-26</code>, committed, and pushed. The second run succeeded and uploaded the artifact <code>Bluey-ipa</code> (1,067,893 bytes). Run: <code>42060418575</code>.</p>
 <p>Lesson: for a build that fails on a missing API, the first check is the runner's SDK version, before any source edit.</p>
-<p><strong>Build history.</strong> Two macOS-runner runs exist, both started by a push on 2026-11-05: run <code>42060209179</code> on <code>macos-15</code> (commit <code>6e4475e</code>, failure, exit code 65) and run <code>42060418575</code> on <code>macos-26</code> (commit <code>10dbe91</code>, success). No later push started the workflow, because it starts only when a push changes <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow file. The runner built only the iPhone app. Windie ran on the Windows laptop, and no Mac that the user owns was used.</p>
+<p><strong>Build history.</strong> Two macOS-runner runs exist, both started by a push on 2026-11-05: run <code>42060209179</code> on <code>macos-15</code> (commit <code>6e4475e</code>, failure, exit code 65) and run <code>42060418575</code> on <code>macos-26</code> (commit <code>10dbe91</code>, success). No later push started the workflow, because it starts only when a push changes <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow file. The runner built only the iPhone app. Bluey for Windows ran on the Windows laptop, and no Mac that the user owns was used.</p>
 <p>That fix was a follow-up inside the push the user had approved, and the earlier plan said I would fix build failures. I flagged it in the same turn.</p>
 <h3>5.4 The README</h3>
 <p>The README was still Riley's. The user asked for a new section with credit to the video and repository, a note that this is a clone and independent work, the new features, how it runs without macOS, and Mermaid diagrams. The message ended with "AMIAQ", which in the user's glossary means: ask questions about decisions first, then work.</p>
@@ -140,11 +140,11 @@
   <li><strong>Sideloadly showed no device.</strong> The first screenshot read <code>&lt;no devices detected&gt;</code>. A Windows device query found the iPhone only over Bluetooth, not USB. After the user replugged the cable and tapped Trust, Windows listed <code>Apple Mobile Device USB Composite Device</code> and Sideloadly listed <code>iPhone (27.2) ... @USB</code>.</li>
   <li><strong>Wrong Apple ID text.</strong> The Apple ID field held <code>az9713</code>, which is not an email. The user corrected it, and Sideloadly then reported <code>[9 App IDs Remaining, updates 6d]</code> and <strong>Done.</strong></li>
   <li><strong>Developer Mode confusion.</strong> The user did not see a Developer Mode question at first. The phone later restarted for it, which showed the install had worked. The user then could not find the app, so I read the IPA's <code>Info.plist</code>: display name <code>Bluey</code>, bundle ID <code>co.visionairy.googly.phone</code>, and no app icon, so iOS shows a plain icon.</li>
-  <li><strong>Windie was not running.</strong> No process matched <code>bluey.py</code>. I started it with <code>pythonw bluey.py --pair</code> (launcher PID 37828, app PID 13428).</li>
+  <li><strong>Bluey for Windows was not running.</strong> No process matched <code>bluey.py</code>. I started it with <code>pythonw bluey.py --pair</code> (launcher PID 37828, app PID 13428).</li>
   <li><strong>The camera closed as soon as it saw the QR code.</strong> The user thought this was a fault. The scan screen in <code>iOS/Sources/QRPairingView.swift</code> calls <code>dismiss()</code> as soon as <code>link.pair(record)</code> succeeds, so closing is the success path. A TCP connection from the phone on the local network to port 57251 of the PC confirmed the pairing.</li>
 </ol>
 <p>Result: the user confirmed that Bluey's eyes track the mouse, and that <strong>Test a nudge</strong> shows a text bubble on the laptop. This is the first real-iPhone test. The Python code needed no change.</p>
-<p>Fragility: the Windie mDNS socket showed ports on <code>127.0.0.1</code> and a VPN address, not on the Wi-Fi address. The phone connected anyway. If a later connection fails, turn off Tailscale first.</p>
+<p>Fragility: the Bluey for Windows mDNS socket showed ports on <code>127.0.0.1</code> and a VPN address, not on the Wi-Fi address. The phone connected anyway. If a later connection fails, turn off Tailscale first.</p>
 
 <h2>7. Verification</h2>
 <table>
@@ -213,7 +213,7 @@
 <h2>11. Knowledge captured</h2>
 <ul>
   <li><code>HANDOFF.md</code> (local only, ignored by git): state, next task, decisions and the scratch list.</li>
-  <li><code>README.md</code>: the new Windie section with credits, diagrams, differences and test status.</li>
+  <li><code>README.md</code>: the new Bluey for Windows section with credits, diagrams, differences and test status.</li>
   <li>This document.</li>
   <li>No memory files were written in the part of the session this document covers.</li>
 </ul>

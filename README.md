@@ -1,6 +1,6 @@
-# Windie: Bluey for Windows
+# Bluey for Windows
 
-Windie is a Windows version of **Bluey**, the blueberry focus friend made by Riley. It tracks your work on a Windows laptop. Your iPhone sits under the monitor and shows the character.
+Bluey for Windows is a Windows version of **Bluey**, the blueberry focus friend made by Riley. It tracks your work on a Windows laptop. Your iPhone sits under the monitor and shows the character.
 
 - **Riley's video:** [Bluey on YouTube](https://www.youtube.com/watch?v=8QPd6WD9Zzg)
 - **Riley's repository:** [rbrown101010/bluey-by-riley](https://github.com/rbrown101010/bluey-by-riley)
@@ -9,9 +9,9 @@ Windie is a Windows version of **Bluey**, the blueberry focus friend made by Ril
 
 Bluey follows the mouse on a real Windows laptop and a real iPhone (recorded 2026-11-05, 10 seconds, no sound). Click the picture to play the video on the demo page.
 
-[![Windie demo: Bluey follows the mouse](docs/demo/windie-demo-poster.png)](https://az9713.github.io/bluey-for-windows/demo.html)
+[![Bluey for Windows demo: Bluey follows the mouse](docs/demo/bluey-for-windows-demo-poster.png)](https://az9713.github.io/bluey-for-windows/demo.html)
 
-The demo page is served by GitHub Pages: <https://az9713.github.io/bluey-for-windows/demo.html>. The video file is [`docs/demo/windie-demo.mp4`](docs/demo/windie-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
+The demo page is served by GitHub Pages: <https://az9713.github.io/bluey-for-windows/demo.html>. The video file is [`docs/demo/bluey-for-windows-demo.mp4`](docs/demo/bluey-for-windows-demo.mp4). The phone shows "Voice could not connect" in the video, because voice was not working in this recording.
 
 **How it works:** an illustrated guide to every component (GitHub Actions, Sideloadly, iTunes' USB driver, pairing, and how the mouse moves Bluey's eyes) is at <https://az9713.github.io/bluey-for-windows/how-it-works.html>.
 
@@ -19,7 +19,7 @@ The demo page is served by GitHub Pages: <https://az9713.github.io/bluey-for-win
 
 This repository is a clone of Riley's project. It is independent development. Riley did not write, review or endorse the Windows code. Riley's Mac and iPhone code is kept as it was, under the same [Unlicense](LICENSE). The original README follows below the line, unchanged except that the old `## Windows` section moved here.
 
-Windie adds the `Windows/` folder and one GitHub Actions workflow. Nothing in `Mac/`, `iOS/` or `Shared/` was changed.
+Bluey for Windows adds the `Windows/` folder and one GitHub Actions workflow. Nothing in `Mac/`, `iOS/` or `Shared/` was changed.
 
 ## What is new
 
@@ -31,11 +31,11 @@ Windie adds the `Windows/` folder and one GitHub Actions workflow. Nothing in `M
 | Capture exclusion | Bluey's own overlay is excluded from screenshots with `WDA_EXCLUDEFROMCAPTURE`. A test shows OCR does not read it. |
 | iPhone build without a Mac | `.github/workflows/ios-ipa.yml` builds an unsigned `Bluey.ipa` on a GitHub macOS runner. |
 
-## How Windie works without macOS
+## How Bluey for Windows works without macOS
 
-The Mac app uses Apple frameworks. Windie uses these Windows parts instead:
+The Mac app uses Apple frameworks. Bluey for Windows uses these Windows parts instead:
 
-| Job | Mac app | Windie |
+| Job | Mac app | Bluey for Windows |
 |---|---|---|
 | Windows, tray, overlay | AppKit | Qt (PySide6) |
 | Screenshot | ScreenCaptureKit | `mss` |
@@ -48,13 +48,13 @@ The Mac app uses Apple frameworks. Windie uses these Windows parts instead:
 | Encryption | CryptoKit | `cryptography` |
 | Secret storage | Keychain | files in `%APPDATA%\Googly` |
 
-The iPhone is the one part that still needs macOS: Xcode builds the iPhone app. Windie uses a cloud macOS runner for that step, so you do not own a Mac.
+The iPhone is the one part that still needs macOS: Xcode builds the iPhone app. Bluey for Windows uses a cloud macOS runner for that step, so you do not own a Mac.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  subgraph PC["Windows laptop (Windie, Python)"]
+  subgraph PC["Windows laptop (Bluey for Windows, Python)"]
     direction TB
     Qt["Qt thread<br/>tray, panels, overlay, hotkeys"]
     Async["asyncio thread<br/>focus session, phone server,<br/>realtime voice, Codex jobs"]
@@ -73,7 +73,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   participant P as iPhone
-  participant W as Windie (PC)
+  participant W as Bluey for Windows (PC)
   W->>W: Make 256-bit secret, show QR text bluey-pair:...
   P->>W: Scan QR (reads secret)
   W-->>P: mDNS _googly._tcp, TXT bluey-id = first 12 bytes of SHA-256(secret)
@@ -137,7 +137,7 @@ Bluey appears in the system tray. Windows Firewall asks about Python on the firs
 3. Install Sideloadly on Windows. Connect the iPhone by USB and trust the computer.
 4. Drag in `Bluey.ipa`, enter an Apple ID, and click Start.
 5. On the iPhone, trust your Apple ID in Settings > General > VPN & Device Management. Turn on Developer Mode if asked.
-6. Open Bluey on the iPhone and choose **Pair Mac**. Scan the QR code from the Windie tray menu.
+6. Open Bluey on the iPhone and choose **Pair Mac**. Scan the QR code from the Bluey for Windows tray menu.
 
 A free Apple ID signature expires after about 7 days, and the app then stops opening until you sign it again. This limit is from memory and was not checked here.
 
@@ -150,7 +150,7 @@ These steps are from knowledge of iOS and were not checked on a device. Menu nam
 3. Open Settings > Privacy & Security. Scroll to the bottom and tap **Developer Mode**. Turn it off. Tap **Restart** when iOS asks.
 4. Optional: to make the iPhone forget "Trust This Computer", open Settings > General > Transfer or Reset iPhone > Reset > **Reset Location & Privacy**. This also resets the location and privacy choices of all apps.
 
-Apple keeps the App ID that Sideloadly registered for your Apple ID, and a free account cannot delete it. On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings > Apps. Quit Windie with **Quit Bluey** in the tray menu.
+Apple keeps the App ID that Sideloadly registered for your Apple ID, and a free account cannot delete it. On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings > Apps. Quit Bluey for Windows with **Quit Bluey** in the tray menu.
 
 ## Test the Windows and iPhone pair
 
@@ -164,7 +164,7 @@ The pairing QR code is a private credential. Do not share a picture of it.
 4. Drag `Bluey.ipa` into Sideloadly. Enter an Apple ID. Click Start.
 5. On the iPhone, trust your Apple ID in Settings > General > VPN & Device Management. Turn on Developer Mode if asked.
 
-**Part 2: start Windie.**
+**Part 2: start Bluey for Windows.**
 
 1. Put the iPhone and the PC on the same Wi-Fi.
 2. From `Windows/`, run `.venv\Scripts\pythonw bluey.py --pair`.
@@ -212,7 +212,7 @@ To test without a phone, run `.venv\Scripts\python test_bluey.py` from `Windows/
 - The real app ran against a fake OpenAI server, with a scripted fake phone over real mDNS. It did off-task checks, a nudge, pointing and a chirp.
 - OCR, capture exclusion, `codex app-server` start-up and QR decoding passed.
 - The iPhone workflow built `Bluey.ipa` on a GitHub runner.
-- On 2026-11-05, a real iPhone (iOS 27.2) installed `Bluey.ipa` with Sideloadly and paired with Windie by QR code. Bluey's eyes followed the mouse, and **Test a nudge** showed a text bubble on the laptop.
+- On 2026-11-05, a real iPhone (iOS 27.2) installed `Bluey.ipa` with Sideloadly and paired with Bluey for Windows by QR code. Bluey's eyes followed the mouse, and **Test a nudge** showed a text bubble on the laptop.
 - Idle CPU is 2.2% of one core. Mean paint time is 3.1 ms.
 
 **Not tested yet:**
@@ -327,7 +327,7 @@ The existing manual pointing, voice context, research cards, Codex controller an
 - `Mac/`: menu bar app, screenshot classifier, nudge generator, timer and existing tools.
 - `iOS/`: face, voice input, QR pairing, synchronized controls and focus timelines.
 - `Tests/`: deterministic logic, lifecycle and secure transport tests.
-- `Windows/`: Windie, the Python rewrite of the Mac app, with its own tests.
+- `Windows/`: Bluey for Windows, the Python rewrite of the Mac app, with its own tests.
 - `.github/workflows/`: builds the unsigned iPhone `.ipa` on a macOS runner.
 
 ## License

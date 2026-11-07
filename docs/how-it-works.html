@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>How Windie works: every component, explained</title>
+<title>How Bluey for Windows works: every component, explained</title>
 <style>
   :root { color-scheme: dark; --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#cbd5e1; --head:#e2e8f0; --muted:#94a3b8; --orange:#fb923c; --teal:#2dd4bf; --red:#f87171; }
   * { box-sizing: border-box; }
@@ -73,7 +73,7 @@
 <body>
 <main>
 
-<h1>How Windie works: every component, explained</h1>
+<h1>How Bluey for Windows works: every component, explained</h1>
 <p class="muted">For a reader who knows software and networks, but not Apple signing, iTunes drivers, Sideloadly or CI. Written 2026-11-05, after the first real run on a Windows 11 laptop and an iPhone.</p>
 
 <nav>
@@ -96,7 +96,7 @@
 
 <h2 id="short">1. The short answer</h2>
 <div class="box key">
-<p><strong>The phone never sees your mouse.</strong> The Windows app (Windie) reads the cursor position on the laptop up to 60 times per second. It turns the position into two numbers, <code>gazeX</code> and <code>gazeY</code>, each between -1 and 1. It sends those numbers to the iPhone as a small encrypted message over your Wi-Fi. The iPhone app (Bluey) moves the pupils to match. Section 9 has an interactive version you can move your own mouse over.</p>
+<p><strong>The phone never sees your mouse.</strong> The Windows app (Bluey for Windows) reads the cursor position on the laptop up to 60 times per second. It turns the position into two numbers, <code>gazeX</code> and <code>gazeY</code>, each between -1 and 1. It sends those numbers to the iPhone as a small encrypted message over your Wi-Fi. The iPhone app (Bluey) moves the pupils to match. Section 9 has an interactive version you can move your own mouse over.</p>
 </div>
 <p>Everything else on this page answers a different question: how did a Windows laptop get to talk to an iPhone app that Apple only lets you build on a Mac? There are two separate problems:</p>
 <ol>
@@ -108,7 +108,7 @@
 <table>
 <tr><th>Component</th><th>What it is</th><th>Role in this project</th></tr>
 <tr><td><strong>Bluey</strong> (Riley's project)</td><td>A "blueberry focus friend": a Mac menu bar app plus an iPhone app, in Swift.</td><td>The original. We kept its iPhone app unchanged.</td></tr>
-<tr><td><strong>Windie</strong> (this repo)</td><td>A Python rewrite of the Mac app, in <code>Windows/</code>.</td><td>Runs on the laptop. Watches the screen and mouse. Talks to the phone.</td></tr>
+<tr><td><strong>Bluey for Windows</strong> (this repo)</td><td>A Python rewrite of the Mac app, in <code>Windows/</code>.</td><td>Runs on the laptop. Watches the screen and mouse. Talks to the phone.</td></tr>
 <tr><td><strong>OpenAI APIs</strong> (4 calls, 3 used in the focus feature)</td><td>Web services at <code>https://api.openai.com/v1/</code>, called with your API key.</td><td><strong>Decisions API</strong> (<code>POST /v1/decisions</code>, model <code>gpt-6-luna</code>): judges each screenshot as <code>on_task</code>, <code>off_task</code> or <code>uncertain</code>. <strong>Responses API</strong> (<code>POST /v1/responses</code>, model <code>gpt-5.5</code>): writes the one-sentence nudge, and web research cards. <strong>Realtime API</strong> (<code>POST /v1/realtime/client_secrets</code>, model <code>gpt-realtime-2.1</code>): gives the phone a short-lived token for voice. <strong>Audio transcription</strong> (<code>gpt-4o-transcribe-diarize</code>, fallback <code>gpt-transcribe</code>): meeting notes. The focus check uses only the first two.</td></tr>
 <tr><td><strong>GitHub</strong></td><td>Hosts the code in a git repository.</td><td>Stores the source. Starts the cloud build. Serves these pages.</td></tr>
 <tr><td><strong>GitHub Actions</strong></td><td>A "run this script on a rented machine when I push" service (CI).</td><td>Builds the iPhone app on a rented Mac.</td></tr>
@@ -122,17 +122,17 @@
 <tr><td><strong>Developer Mode</strong></td><td>An iOS switch (iOS 16 and later) that allows apps from outside the App Store.</td><td>Must be on, or the sideloaded app will not open.</td></tr>
 <tr><td><strong>mDNS / Bonjour</strong></td><td>A way for devices on one network to announce and find services by name, with no server.</td><td>The phone finds the PC. Service name <code>_googly._tcp</code>.</td></tr>
 <tr><td><strong>QR pairing + AES-GCM</strong></td><td>A shared secret passed by camera, then encrypted messages.</td><td>Only your phone can talk to your PC.</td></tr>
-<tr><td><strong>Tailscale / VPN</strong></td><td>Another network adapter on your PC.</td><td>Not required. It adds a second address that Windie advertises.</td></tr>
+<tr><td><strong>Tailscale / VPN</strong></td><td>Another network adapter on your PC.</td><td>Not required. It adds a second address that Bluey for Windows advertises.</td></tr>
 </table>
 
 <h2 id="map">3. The end-to-end map</h2>
 <p>This figure shows the whole journey, from "push code" to "eyes move". Use <strong>Next</strong> to step through. Each highlighted arrow is one handoff, and sections 5 to 9 explain each one.</p>
 <div class="fig" id="fig-map"></div>
 
-<h2 id="why">4. Why Windie exists at all</h2>
-<p>Riley's Mac app calls Apple frameworks for everything that touches the computer: screenshots, text recognition, reading buttons, clicking, hotkeys, finding the phone, encryption and storing secrets. None of them exist on Windows. Windie replaces each one with a Windows equivalent, and keeps the phone protocol identical, byte for byte, so the iPhone app does not change.</p>
+<h2 id="why">4. Why Bluey for Windows exists at all</h2>
+<p>Riley's Mac app calls Apple frameworks for everything that touches the computer: screenshots, text recognition, reading buttons, clicking, hotkeys, finding the phone, encryption and storing secrets. None of them exist on Windows. Bluey for Windows replaces each one with a Windows equivalent, and keeps the phone protocol identical, byte for byte, so the iPhone app does not change.</p>
 <table>
-<tr><th>Job</th><th>Mac app</th><th>Windie</th></tr>
+<tr><th>Job</th><th>Mac app</th><th>Bluey for Windows</th></tr>
 <tr><td>Windows, tray icon, overlay</td><td>AppKit</td><td>Qt (PySide6)</td></tr>
 <tr><td>Screenshot</td><td>ScreenCaptureKit</td><td><code>mss</code></td></tr>
 <tr><td>Read text on screen (OCR)</td><td>Vision</td><td><code>Windows.Media.Ocr</code></td></tr>
@@ -186,7 +186,7 @@ steps:
 </table>
 <ul>
 <li><strong>What the runner did:</strong> it compiled the iPhone app and packed the unsigned <code>Bluey.ipa</code>. The second run made the file that was later installed on the iPhone.</li>
-<li><strong>What the runner did not do:</strong> it did not run Windie. Windie runs on the Windows laptop. No Mac that you own was used. GitHub deletes the rented Mac after each run.</li>
+<li><strong>What the runner did not do:</strong> it did not run Bluey for Windows. Bluey for Windows runs on the Windows laptop. No Mac that you own was used. GitHub deletes the rented Mac after each run.</li>
 <li><strong>Why there were only two runs:</strong> the workflow starts only when a push changes <code>iOS/</code>, <code>Shared/</code>, <code>project.yml</code> or the workflow file. Later pushes that only changed the README, the docs, the demo video or the explainer pages did not start it. A person can also start it by hand with "Run workflow" (<code>workflow_dispatch</code>).</li>
 </ul>
 <p>Cost: GitHub macOS minutes are free for public repositories and limited for private ones (from memory, not checked). This repository is public.</p>
@@ -196,7 +196,7 @@ steps:
 <li><strong>Contents:</strong> one file, <code>bluey-ipa/Bluey-ipa/Bluey.ipa</code>, 1,080,123 bytes, saved 2026-11-05 at 13:08 local time. The folder <code>Bluey-ipa</code> inside it carries the artifact name.</li>
 <li><strong>Origin:</strong> the artifact <code>Bluey-ipa</code> of run <code>42060418575</code> (runner <code>macos-26</code>, commit <code>10dbe91</code>), downloaded from the Actions tab and unzipped. The workflow step <code>upload-artifact</code> created the artifact (see the table above). The run page shows the artifact size as 1,067,893 bytes, the compressed download. The unzipped file is 1,080,123 bytes.</li>
 <li><strong>Signature:</strong> none. The build turned signing off. Sideloadly signed a copy of the app with the Apple ID during the install. The file in the folder stays unsigned.</li>
-<li><strong>Use:</strong> Sideloadly was the only program that read the file. Windie does not use it.</li>
+<li><strong>Use:</strong> Sideloadly was the only program that read the file. Bluey for Windows does not use it.</li>
 <li><strong>Safe to delete:</strong> yes. The run page keeps the artifact until GitHub's retention period ends (the period was not checked), so you can download it again.</li>
 </ul>
 
@@ -240,7 +240,7 @@ steps:
 
 <h2 id="pair">8. Problem B: finding the PC and pairing</h2>
 <h3>Finding</h3>
-<p>Both devices are on the same Wi-Fi. Windie announces a service called <code>_googly._tcp</code> using mDNS (the same idea as Apple's Bonjour). The announcement carries a TCP port (57251 in our run) and a short label, <code>bluey-id</code>, equal to the first 12 bytes of SHA-256 of the shared secret, written as 24 hex characters. The phone looks for that service name on the network and compares the label to the one it holds.</p>
+<p>Both devices are on the same Wi-Fi. Bluey for Windows announces a service called <code>_googly._tcp</code> using mDNS (the same idea as Apple's Bonjour). The announcement carries a TCP port (57251 in our run) and a short label, <code>bluey-id</code>, equal to the first 12 bytes of SHA-256 of the shared secret, written as 24 hex characters. The phone looks for that service name on the network and compares the label to the one it holds.</p>
 <h3>Pairing</h3>
 <p>The first time, the PC shows a QR code. It contains the text <code>bluey-pair:</code> plus base64 of a small JSON record with a version, the service name and a 256-bit secret. The phone scans it and saves the secret in its Keychain. From then on, every connection must prove it knows the secret, with no password typed and nothing sent in the clear.</p>
 <p><strong>Why the camera closes at once.</strong> The scan screen calls <code>dismiss()</code> the moment a valid code is saved (<code>iOS/Sources/QRPairingView.swift</code>). A fast close means success.</p>
@@ -254,11 +254,11 @@ steps:
 <li>The Windows code is in <code>Windows/link.py</code>. It must match <code>iOS/Sources/MacLink.swift</code> and <code>Shared/SecurePairing.swift</code> exactly. Three Swift traps are pinned by tests: dates are seconds since 2001-01-01, UUIDs are uppercase, and every non-optional key must be present.</li>
 </ul>
 </details>
-<p><strong>Why a Windows PC can pretend to be a Mac.</strong> The phone does not care what the other end is. It checks for the service name, the secret, and the message format. Windie speaks all three, so the phone treats it as the Mac app.</p>
+<p><strong>Why a Windows PC can pretend to be a Mac.</strong> The phone does not care what the other end is. It checks for the service name, the secret, and the message format. Bluey for Windows speaks all three, so the phone treats it as the Mac app.</p>
 
 <h2 id="mouse">9. The mystery: how Bluey tracked a mouse on a different system</h2>
 <div class="box key">
-<p>The phone is a screen that draws eyes. All the thinking happens on the PC. Every tick (about every 16 ms while something is drawn, about 33 ms when idle), Windie does this:</p>
+<p>The phone is a screen that draws eyes. All the thinking happens on the PC. Every tick (about every 16 ms while something is drawn, about 33 ms when idle), Bluey for Windows does this:</p>
 <ol>
 <li>Reads the cursor position with Qt's <code>QCursor.pos()</code>, which asks Windows for it.</li>
 <li>Treats the phone as sitting at a <em>virtual point</em> just below the bottom edge of the screen: horizontally at 20%, 50% or 80% of the screen width (the menu item "Phone Sits Under", default Center), vertically at 118% of the screen height.</li>
@@ -270,17 +270,17 @@ gazeY = -max(0.15, min(1, (phoneY - cursorY) / (screenHeight * 1.1)))</code></pr
 <p>The iPhone app moves the pupils toward those numbers with a spring (stiffness 260, damping 0.82 in <code>FaceView.swift</code>), which makes the motion smooth and adds a small jitter.</p>
 </div>
 <h3>The handoff chain, one hop at a time</h3>
-<p>This is the full path of one eye movement, from your hand to the pupils. There are 12 hops. They cross three boundaries: the Qt thread to the asyncio thread inside Windie, the PC to the phone over Wi-Fi, and the phone's network code to its drawing code. Use <strong>Next</strong> to step through. The caption names who runs each hop.</p>
+<p>This is the full path of one eye movement, from your hand to the pupils. There are 12 hops. They cross three boundaries: the Qt thread to the asyncio thread inside Bluey for Windows, the PC to the phone over Wi-Fi, and the phone's network code to its drawing code. Use <strong>Next</strong> to step through. The caption names who runs each hop.</p>
 <div class="fig" id="fig-mouse"></div>
 <table>
 <tr><th>#</th><th>Hop</th><th>Where it runs</th><th>Code</th></tr>
 <tr><td>1</td><td>You move the mouse.</td><td>Hardware and Windows</td><td>-</td></tr>
 <tr><td>2</td><td>Windows updates its cursor position.</td><td>Windows</td><td>Operating system</td></tr>
 <tr><td>3</td><td>A timer fires: every 16 ms while Bluey is drawn, every 33 ms when it is tucked away.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>_tick</code></td></tr>
-<tr><td>4</td><td>Windie reads the cursor with <code>QCursor.pos()</code>.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>_tick</code></td></tr>
+<tr><td>4</td><td>Bluey for Windows reads the cursor with <code>QCursor.pos()</code>.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>_tick</code></td></tr>
 <tr><td>5</td><td>The engine turns the position into <code>gazeX</code>, <code>gazeY</code>, mood and talk level.</td><td>PC, Qt thread</td><td><code>overlay.py</code> <code>face()</code></td></tr>
 <tr><td>6</td><td>The result is handed to the asyncio thread.</td><td>PC, between threads</td><td><code>bluey.py</code> <code>call_soon_threadsafe</code></td></tr>
-<tr><td>7</td><td>Windie drops updates too small to see.</td><td>PC, asyncio thread</td><td><code>link.py</code> <code>send_face</code></td></tr>
+<tr><td>7</td><td>Bluey for Windows drops updates too small to see.</td><td>PC, asyncio thread</td><td><code>link.py</code> <code>send_face</code></td></tr>
 <tr><td>8</td><td>The packet is numbered, encrypted and written as one line.</td><td>PC, asyncio thread</td><td><code>link.py</code> <code>SecureChannel.seal</code></td></tr>
 <tr><td>9</td><td>The line travels over TCP on your Wi-Fi.</td><td>Network</td><td>-</td></tr>
 <tr><td>10</td><td>The phone decrypts it, checks the sequence number and decodes the face.</td><td>iPhone, network code</td><td><code>MacLink.swift</code> (<code>onPacket</code>, <code>onFace</code>)</td></tr>
@@ -318,7 +318,7 @@ packets in the last second: 0</div>
 <tr><th>Question</th><th>Answer</th></tr>
 <tr><td>Where is the mouse read?</td><td>On the PC only. The phone has no access to the PC's mouse.</td></tr>
 <tr><td>What crosses the network?</td><td>Two small numbers, a mood word and a talk level. About one short line of JSON per update, encrypted.</td></tr>
-<tr><td>How often?</td><td>Up to 60 times per second. Windie skips an update when both gaze values moved less than 0.004, and mood and talk did not change. It still resends once per second, so the phone knows the PC is alive (<code>send_face</code> in <code>Windows/link.py</code>).</td></tr>
+<tr><td>How often?</td><td>Up to 60 times per second. Bluey for Windows skips an update when both gaze values moved less than 0.004, and mood and talk did not change. It still resends once per second, so the phone knows the PC is alive (<code>send_face</code> in <code>Windows/link.py</code>).</td></tr>
 <tr><td>How does the phone know where the PC screen is?</td><td>It does not. It only receives a direction. The PC decides what "left" and "up" mean, using the virtual phone point.</td></tr>
 <tr><td>Why do the eyes always look a little up?</td><td>The virtual phone point is below the screen, so every cursor position is above it. The code limits <code>gazeY</code> to at least 0.15 upward.</td></tr>
 <tr><td>Why did Bluey fall asleep in the video?</td><td>In follow-mouse mode, if the mouse does not move for 5 seconds the mood becomes <code>sleepy</code>, and after 15 seconds <code>resting</code> (<code>overlay.py</code>).</td></tr>
@@ -327,11 +327,11 @@ packets in the last second: 0</div>
 <p>The "Test a nudge" button works the other way: the phone sends a command to the PC, and the PC shows a text bubble. That exercised the second direction of the same encrypted channel.</p>
 
 <h2 id="focus">10. The focus check: screenshots and OpenAI</h2>
-<p>Mouse tracking needs no internet. The focus feature does. You tell Bluey a task. While the timer runs, Windie checks every 30 seconds (every 10 real seconds in Developer Mode):</p>
+<p>Mouse tracking needs no internet. The focus feature does. You tell Bluey a task. While the timer runs, Bluey for Windows checks every 30 seconds (every 10 real seconds in Developer Mode):</p>
 <div class="fig" id="fig-focus"></div>
 <ul>
 <li><strong>Capture:</strong> one screenshot of the main display, using a Windows setting that hides Bluey's own windows from the capture.</li>
-<li><strong>Read:</strong> Windows OCR turns the screen text into words, and Windie records the front app name.</li>
+<li><strong>Read:</strong> Windows OCR turns the screen text into words, and Bluey for Windows records the front app name.</li>
 <li><strong>Decide:</strong> a reduced JPEG, the OCR text, the task and recent results go to OpenAI's Decisions API (<code>gpt-6-luna</code>), which answers <code>on_task</code>, <code>off_task</code> or <code>uncertain</code>.</li>
 <li><strong>Policy:</strong> a nudge needs several consecutive off-task answers over 120 to 240 seconds (40 to 80 focus seconds in Developer Mode).</li>
 <li><strong>Nudge:</strong> a second request (<code>gpt-5.5</code>) writes one gentle sentence. The PC shows it in a bubble. The phone chirps.</li>
@@ -353,13 +353,13 @@ packets in the last second: 0</div>
 <tr><td>9</td><td>Sideloadly &rarr; Apple</td><td>Apple ID login, certificate, App ID, provisioning profile.</td><td class="ok">yes (<code>9 App IDs Remaining</code>)</td></tr>
 <tr><td>10</td><td>Sideloadly &rarr; iPhone (USB)</td><td>Signed <code>Bluey.app</code> is installed.</td><td class="ok">yes (<strong>Done.</strong>)</td></tr>
 <tr><td>11</td><td>You &rarr; iPhone settings</td><td>Trust the developer, turn on Developer Mode, restart.</td><td class="ok">yes</td></tr>
-<tr><td>12</td><td>Windie &rarr; Wi-Fi</td><td>mDNS announcement <code>_googly._tcp</code>, TCP port 57251.</td><td class="ok">yes (listening port seen)</td></tr>
+<tr><td>12</td><td>Bluey for Windows &rarr; Wi-Fi</td><td>mDNS announcement <code>_googly._tcp</code>, TCP port 57251.</td><td class="ok">yes (listening port seen)</td></tr>
 <tr><td>13</td><td>PC screen &rarr; iPhone camera</td><td>QR code with the secret.</td><td class="ok">yes</td></tr>
 <tr><td>14</td><td>iPhone &harr; PC (Wi-Fi)</td><td>Challenge, proof, encrypted channel, <code>paired</code>.</td><td class="ok">yes (TCP connection from the phone seen)</td></tr>
-<tr><td>15</td><td>PC mouse &rarr; Windie &rarr; iPhone (12 hops, see section 9)</td><td><code>QCursor.pos()</code>, <code>gazeX</code>/<code>gazeY</code>, encrypted packet, eyes move.</td><td class="ok">yes (video, 2026-11-05)</td></tr>
-<tr><td>16</td><td>iPhone &rarr; Windie</td><td>"Test a nudge" command; PC shows a bubble.</td><td class="ok">yes (bubble); phone chirp not confirmed</td></tr>
-<tr><td>17</td><td>Windie &harr; OpenAI Decisions API, then Responses API</td><td>Screenshot and OCR text out, <code>on_task</code>/<code>off_task</code>/<code>uncertain</code> back; then a nudge sentence.</td><td class="bad">not tested with the real API</td></tr>
-<tr><td>18</td><td>iPhone &rarr; Windie (voice)</td><td>Hold-to-talk through the Realtime API.</td><td class="bad">not working in the video ("Voice could not connect")</td></tr>
+<tr><td>15</td><td>PC mouse &rarr; Bluey for Windows &rarr; iPhone (12 hops, see section 9)</td><td><code>QCursor.pos()</code>, <code>gazeX</code>/<code>gazeY</code>, encrypted packet, eyes move.</td><td class="ok">yes (video, 2026-11-05)</td></tr>
+<tr><td>16</td><td>iPhone &rarr; Bluey for Windows</td><td>"Test a nudge" command; PC shows a bubble.</td><td class="ok">yes (bubble); phone chirp not confirmed</td></tr>
+<tr><td>17</td><td>Bluey for Windows &harr; OpenAI Decisions API, then Responses API</td><td>Screenshot and OCR text out, <code>on_task</code>/<code>off_task</code>/<code>uncertain</code> back; then a nudge sentence.</td><td class="bad">not tested with the real API</td></tr>
+<tr><td>18</td><td>iPhone &rarr; Bluey for Windows (voice)</td><td>Hold-to-talk through the Realtime API.</td><td class="bad">not working in the video ("Voice could not connect")</td></tr>
 </table>
 
 <h2 id="broke">12. What broke, and what each failure teaches</h2>
@@ -372,9 +372,9 @@ packets in the last second: 0</div>
 <tr><td>Sideloadly</td><td>Apple ID field held <code>az9713</code></td><td>An Apple ID is an email address.</td></tr>
 <tr><td>Phone</td><td>"I do not see Bluey"</td><td>It was installed. A blank icon (the app has no icon file), search by name.</td></tr>
 <tr><td>Pairing</td><td>"The camera closes as soon as it sees the QR"</td><td>That is the success path.</td></tr>
-<tr><td>Windie</td><td>Wrong pointer position at 125% display scale</td><td>Set DPI awareness at import and read DPI per monitor.</td></tr>
-<tr><td>Windie</td><td>Hotkey Ctrl+Alt+Space was taken</td><td>Wake moved to Ctrl+Alt+W.</td></tr>
-<tr><td>Windie</td><td>Idle CPU readings of 20.3% and 14.1%</td><td>They came from a busier run. A clean measurement gave 2.2% of one core.</td></tr>
+<tr><td>Bluey for Windows</td><td>Wrong pointer position at 125% display scale</td><td>Set DPI awareness at import and read DPI per monitor.</td></tr>
+<tr><td>Bluey for Windows</td><td>Hotkey Ctrl+Alt+Space was taken</td><td>Wake moved to Ctrl+Alt+W.</td></tr>
+<tr><td>Bluey for Windows</td><td>Idle CPU readings of 20.3% and 14.1%</td><td>They came from a busier run. A clean measurement gave 2.2% of one core.</td></tr>
 </table>
 
 <h2 id="state">13. What is verified and what is not</h2>
@@ -385,10 +385,10 @@ packets in the last second: 0</div>
 <li>35 unit tests pass.</li>
 <li>The cloud build makes an <code>.ipa</code>.</li>
 <li>Sideloadly installs it on a real iPhone.</li>
-<li>The phone pairs by QR with Windie.</li>
+<li>The phone pairs by QR with Bluey for Windows.</li>
 <li>The eyes follow the mouse (video: <a href="demo.html">demo page</a>).</li>
 <li>"Test a nudge" shows a bubble on the PC.</li>
-<li>Windie's overlay does not appear in its own screenshots.</li>
+<li>Bluey for Windows's overlay does not appear in its own screenshots.</li>
 </ul>
 </div>
 <div class="box">
@@ -433,7 +433,7 @@ packets in the last second: 0</div>
 </ol>
 <div class="box warn">
 <p>Apple keeps the App ID that Sideloadly registered for your Apple ID. A free account cannot delete it.</p>
-<p>On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings &gt; Apps. Quit Windie with <strong>Quit Bluey</strong> in the tray menu. Do not kill it by name.</p>
+<p>On Windows, uninstall Sideloadly and iTunes (including "Apple Mobile Device Support") in Settings &gt; Apps. Quit Bluey for Windows with <strong>Quit Bluey</strong> in the tray menu. Do not kill it by name.</p>
 </div>
 
 </main>
@@ -571,7 +571,7 @@ packets in the last second: 0</div>
       { id: "side", x: 540, y: 170, w: 190, h: 60, t: ["Sideloadly", "(on your PC)"] },
       { id: "drv", x: 740, y: 170, w: 140, h: 60, t: ["Apple USB", "driver (iTunes)"] },
       { id: "phone", x: 740, y: 320, w: 140, h: 70, t: ["iPhone", "Bluey app"] },
-      { id: "win", x: 270, y: 320, w: 200, h: 70, t: ["Windie", "(on your PC)"] },
+      { id: "win", x: 270, y: 320, w: 200, h: 70, t: ["Bluey for Windows", "(on your PC)"] },
       { id: "ai", x: 20, y: 320, w: 170, h: 70, t: ["OpenAI Decisions +", "Responses APIs"] }
     ],
     edges: [["repo", "act"], ["act", "ipa"], ["ipa", "side"], ["side", "drv"], ["drv", "phone"], ["win", "phone"], ["win", "ai"]],
@@ -581,9 +581,9 @@ packets in the last second: 0</div>
       { on: ["act", "ipa"], edges: [["act", "ipa"]], text: "The Mac compiles the Swift code and packs an unsigned Bluey.ipa. You download it." },
       { on: ["ipa", "side"], edges: [["ipa", "side"]], text: "Sideloadly takes the .ipa, logs into Apple with your Apple ID, and signs the app for your phone." },
       { on: ["side", "drv", "phone"], edges: [["side", "drv"], ["drv", "phone"]], text: "Sideloadly installs the signed app over USB, through Apple's driver and service that iTunes provides." },
-      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Windie (on the PC) and Bluey (on the phone) find each other over Wi-Fi and pair with a QR code." },
-      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Windie reads the mouse and sends the eye direction. The phone moves the eyes." },
-      { on: ["win", "ai"], edges: [["win", "ai"]], text: "Optional focus check: Windie sends a screenshot and OCR text to the Decisions API (POST /v1/decisions) and gets on_task, off_task or uncertain back. If a nudge is due, it calls the Responses API for one sentence. Not yet tested with the real API." }
+      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Bluey for Windows (on the PC) and Bluey (on the phone) find each other over Wi-Fi and pair with a QR code." },
+      { on: ["win", "phone"], edges: [["win", "phone"]], text: "Bluey for Windows reads the mouse and sends the eye direction. The phone moves the eyes." },
+      { on: ["win", "ai"], edges: [["win", "ai"]], text: "Optional focus check: Bluey for Windows sends a screenshot and OCR text to the Decisions API (POST /v1/decisions) and gets on_task, off_task or uncertain back. If a nudge is due, it calls the Responses API for one sentence. Not yet tested with the real API." }
     ]
   });
 
@@ -605,8 +605,8 @@ packets in the last second: 0</div>
     ],
     edges: [["m1", "m2"], ["m2", "m3"], ["m3", "m4"], ["m4", "m5"], ["m5", "m6"], ["m6", "m7"], ["m7", "m8"], ["m8", "m9"], ["m9", "m10"], ["m10", "m11"], ["m11", "m12"]],
     steps: [
-      { on: ["m1"], text: "Hop 1 (you). You move the mouse. Nothing in Windie or Bluey is involved yet." },
-      { on: ["m2"], edges: [["m1", "m2"]], text: "Hop 2 (Windows). Windows updates the system cursor position. Windie does not hook the mouse. It asks for the position when it needs it." },
+      { on: ["m1"], text: "Hop 1 (you). You move the mouse. Nothing in Bluey for Windows or Bluey is involved yet." },
+      { on: ["m2"], edges: [["m1", "m2"]], text: "Hop 2 (Windows). Windows updates the system cursor position. Bluey for Windows does not hook the mouse. It asks for the position when it needs it." },
       { on: ["m3"], edges: [["m2", "m3"]], text: "Hop 3 (PC, Qt thread). A Qt timer calls _tick in overlay.py every 16 ms while Bluey is drawn, and every 33 ms when nothing is drawn. This is a polling loop, about 60 or 30 reads per second." },
       { on: ["m4"], edges: [["m3", "m4"]], text: "Hop 4 (PC, Qt thread). _tick reads QCursor.pos() and subtracts the overlay window's top-left corner, so the position is relative to the overlay." },
       { on: ["m5"], edges: [["m4", "m5"]], text: "Hop 5 (PC, Qt thread). engine.face() computes gazeX and gazeY from the cursor and the virtual phone point under the screen. It also picks a mood: listening, sleepy after 5 s without mouse movement, resting after 15 s. Result: {gazeX, gazeY, mood, talk}." },
@@ -615,7 +615,7 @@ packets in the last second: 0</div>
       { on: ["m8"], edges: [["m7", "m8"]], text: "Hop 8 (PC, asyncio thread). SecureChannel.seal wraps the packet as {sequence: n, packet: {face: ...}}, encrypts it with AES-GCM, encodes it as base64 and ends it with a newline. broadcast() sends it to every paired phone." },
       { on: ["m9"], edges: [["m8", "m9"]], text: "Hop 9 (network). The line goes over the TCP connection to the phone: through your Wi-Fi router, on the local network. Nothing leaves your home network. I did not measure how long this takes." },
       { on: ["m10"], edges: [["m9", "m10"]], text: "Hop 10 (iPhone, network code). MacLink reads the line, decrypts it, checks that the sequence number is the next expected one, and decodes the packet. The face is passed to onFace." },
-      { on: ["m11"], edges: [["m10", "m11"]], text: "Hop 11 (iPhone). The face animator (animator.receive in FaceView.swift) stores the whole face as the new target and records when it arrived. If no packet arrives for 2.5 seconds, the phone decides the PC is not driving and the eyes wander on their own. That is why Windie resends once per second." },
+      { on: ["m11"], edges: [["m10", "m11"]], text: "Hop 11 (iPhone). The face animator (animator.receive in FaceView.swift) stores the whole face as the new target and records when it arrived. If no packet arrives for 2.5 seconds, the phone decides the PC is not driving and the eyes wander on their own. That is why Bluey for Windows resends once per second." },
       { on: ["m12"], edges: [["m11", "m12"]], text: "Hop 12 (iPhone, drawing). On every display frame (TimelineView), a spring (stiffness 260, damping 0.82) moves the pupils toward the target, and the screen redraws. This is what you see." }
     ]
   });
@@ -683,12 +683,12 @@ packets in the last second: 0</div>
   });
 
   sequence("fig-pair", {
-    label: "Discovery and pairing between Windie and Bluey",
-    a: "iPhone (Bluey)", b: "PC (Windie)",
+    label: "Discovery and pairing between Bluey for Windows and Bluey",
+    a: "iPhone (Bluey)", b: "PC (Bluey for Windows)",
     msgs: [
       { dir: "l", label: "show QR: bluey-pair:{secret}", text: "The PC makes a 256-bit secret (stored in %APPDATA%\\Googly\\pairing-secret) and shows it as a QR code. The QR code is a private credential." },
       { dir: "r", label: "camera scans the QR", text: "The phone camera reads the code. The app saves the secret in the iPhone Keychain and closes the scan screen." },
-      { dir: "l", label: "mDNS: _googly._tcp, port, bluey-id", text: "Windie announces the service on the Wi-Fi. The bluey-id label is the first 12 bytes of SHA-256(secret), so the phone knows it found the right PC." },
+      { dir: "l", label: "mDNS: _googly._tcp, port, bluey-id", text: "Bluey for Windows announces the service on the Wi-Fi. The bluey-id label is the first 12 bytes of SHA-256(secret), so the phone knows it found the right PC." },
       { dir: "r", label: "TCP connect", text: "The phone opens a TCP connection to the advertised address and port. (It needs the Local Network permission.)" },
       { dir: "l", label: "{challenge: random}", text: "The PC sends a fresh random challenge." },
       { dir: "r", label: "{proof: HMAC(secret, challenge)}", text: "The phone proves it knows the secret without sending it." },
@@ -713,8 +713,8 @@ packets in the last second: 0</div>
     edges: [["t", "cap"], ["cap", "ocr"], ["ocr", "dec"], ["dec", "pol"], ["pol", "nud"], ["nud", "pc"], ["pc", "ph"]],
     steps: [
       { on: ["t"], text: "While a focus session runs, a timer fires every 30 real seconds (every 10 in Developer Mode)." },
-      { on: ["cap"], edges: [["t", "cap"]], text: "Windie captures the main display. Its own windows are excluded from the capture (SetWindowDisplayAffinity)." },
-      { on: ["ocr"], edges: [["cap", "ocr"]], text: "Windows' built-in OCR reads text on the screen. Windie also notes the name of the front app." },
+      { on: ["cap"], edges: [["t", "cap"]], text: "Bluey for Windows captures the main display. Its own windows are excluded from the capture (SetWindowDisplayAffinity)." },
+      { on: ["ocr"], edges: [["cap", "ocr"]], text: "Windows' built-in OCR reads text on the screen. Bluey for Windows also notes the name of the front app." },
       { on: ["dec"], edges: [["ocr", "dec"]], text: "A reduced JPEG, the OCR text, your task and recent results go to the Decisions API (POST /v1/decisions, model gpt-6-luna). It answers on_task, off_task or uncertain, with probabilities." },
       { on: ["pol"], edges: [["dec", "pol"]], text: "Only consecutive off-task answers count. A nudge needs 120 to 240 seconds of evidence (40 to 80 focus seconds in Developer Mode)." },
       { on: ["nud"], edges: [["pol", "nud"]], text: "A second request, to the Responses API (POST /v1/responses, model gpt-5.5), writes one gentle sentence and may choose an OCR line to point at." },
